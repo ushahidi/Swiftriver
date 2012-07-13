@@ -112,4 +112,14 @@ class Model_Message extends ORM {
 
 		return 'just now';
 	}
+
+	public static function count_unread($user_id)
+	{
+		return DB::select(array(DB::expr('COUNT(*)'),'num_message'))
+				->from('messages')
+				->where('recipient_id', '=', $user_id)
+				->where('read', '=', 0)
+				->execute()
+				->get('num_message', 0);
+	}
 } // End Message

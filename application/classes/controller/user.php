@@ -121,12 +121,7 @@ class Controller_User extends Controller_Swiftriver {
 				'action' => 'inbox'
 			));
 
-			$new_messages = DB::select(array(DB::expr('COUNT(*)'),'num_message'))
-				->from('messages')
-				->where('recipient_id', '=', $this->user->id)
-				->where('read', '=', 0)
-				->execute()
-				->get('num_message', 0);
+			$new_messages = Model_Message::count_unread($this->user->id);
 
 			$this->sub_content->has_messages = (count($messages) > 0);
 			$this->sub_content->new_messages = $new_messages;

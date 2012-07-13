@@ -315,12 +315,7 @@ class Model_User_Action extends ORM {
 			->execute()
 			->get('num_notification', 0);
 		
-		$m = DB::select(array(DB::expr('COUNT(*)'),'num_message'))
-			->from('messages')
-			->where('recipient_id', '=', $user_id)
-			->where('read', '=', 0)
-			->execute()
-			->get('num_message', 0);
+		$m = Model_Message::count_unread($user_id);
 		
 		return $n+$m;
 	}
