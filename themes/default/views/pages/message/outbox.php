@@ -1,14 +1,4 @@
-<?php
-function soft_truncate($string, $length = 200)
-{
-	$string = str_replace("\n", ' ', $string);
-	if (strlen($string) > $length)
-	{
-		$string = substr(wordwrap($string, $length), 0, strpos($string, "\n"));
-	}
-	return $string;
-}
-?><script type="text/javascript">
+<script type="text/javascript">
 	window.history.replaceState({}, 'Inbox', "<?php echo $link_outbox; ?>");
 	$(function() {
 		$('.messages tr').click(function(){
@@ -38,7 +28,7 @@ function soft_truncate($string, $length = 200)
 				<td width="15%" align="left"><?php echo $m->recipient->name; ?></td>
 				<td width="*" align="left">
 					<span class="subject"><?php echo $m->subject; ?></span>
-					<span class="details"> - <?php echo soft_truncate($m->message); ?></span>
+					<span class="details"> - <?php echo Text::limit_chars($m->message, 200, '...', TRUE); ?></span>
 				</td>
 				<td width="110px" align="right"><?php echo $m->relative_time(); ?></td>
 			</tr><?php endforeach; ?>
