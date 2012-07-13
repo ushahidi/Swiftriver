@@ -36,6 +36,25 @@
 		</div>
 		<?php endif; ?>
 	</article>
+	
+	<article class="container base">
+		<?php if ($has_messages): ?>
+		<header class="cf">
+			<div class="property-title"><h1><?php echo __("Messages"); ?><?php if ($new_messages) echo ' ('.$new_messages.')' ?></h1></div>
+			<a class="messages_link" href="<?php echo URL::site($account->account_path.'/messages/inbox'); ?>">See more</a>
+		</header>
+		<section id="messages_mini" class="property-parameters">
+			<?php echo $messages_mini; ?>
+		</section>
+		<?php else: ?>
+		<div class="alert-message blue">
+			<p>
+				<strong><?php echo __("Empty message inbox"); ?></strong>
+				<?php echo __("There are no messages in your inbox"); ?>
+			</p>
+		</div>
+		<?php endif; ?>
+	</article>
 	<?php
 	/*
 	<article class="container action-list base">

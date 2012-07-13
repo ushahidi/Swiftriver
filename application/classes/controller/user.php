@@ -68,8 +68,12 @@ class Controller_User extends Controller_Swiftriver {
 			$this->request->redirect($this->dashboard_url);
 		}
 
+		// Save the username of the visitor
+		$username = $this->account->user->username;
+
 		$this->template->content = View::factory('pages/user/layout')
 			->bind('account', $this->visited_account)
+			->bind('username', $username)
 			->bind('owner', $this->owner)
 			->bind('active', $this->active)
 			->bind('sub_content', $this->sub_content)
@@ -109,6 +113,31 @@ class Controller_User extends Controller_Swiftriver {
 				->bind('owner', $this->owner)
 				->bind('account', $this->visited_account);
 			$gravatar_view = TRUE;
+
+			$messages = ORM::factory('message')
+				->where('recipient_id', '=', $this->user->id)
+				->order_by('read', 'asc')
+				->order_by('timestamp', 'desc')->limit(5)
+				->find_all()
+				->as_array();
+
+			$link_inbox = route::url('messages', array(
+				'account' => $this->request->param('account'),
+				'action' => 'inbox'
+			));
+
+			$new_messages = DB::select(array(DB::expr('COUNT(*)'),'num_message'))
+				->from('messages')
+				->where('recipient_id', '=', $this->user->id)
+				->where('read', '=', 0)
+				->execute()
+				->get('num_message', 0);
+
+			$this->sub_content->has_messages = (count($messages) > 0);
+			$this->sub_content->new_messages = $new_messages;
+			$this->sub_content->messages_mini = View::factory('pages/message/mini')
+				->bind('link_inbox', $link_inbox)
+				->bind('messages', $messages);
 		}
 		else
 		{
