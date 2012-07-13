@@ -114,12 +114,7 @@ class Controller_User extends Controller_Swiftriver {
 				->bind('account', $this->visited_account);
 			$gravatar_view = TRUE;
 
-			$messages = ORM::factory('message')
-				->where('recipient_id', '=', $this->user->id)
-				->order_by('read', 'asc')
-				->order_by('timestamp', 'desc')->limit(5)
-				->find_all()
-				->as_array();
+			$messages = $this->user->get_preview_messages();
 
 			$link_inbox = route::url('messages', array(
 				'account' => $this->request->param('account'),
