@@ -345,6 +345,18 @@ Route::set('account', '<account>(/<controller>/<name>(/<action>(/<id>(/<id2>))))
 		'action'     => 'index'
 	));
 
+/**
+ * Messages
+ */
+Route::set('messages', '<account>/messages(/<action>(/<id>))',
+	array(
+		'action' => '(inbox|outbox|create)',
+		'id'     => '\d+'
+	))
+	->defaults(array(
+		'controller' => 'message',
+		'action'     => 'inbox'
+	));
 
 /**
  * Swiftriver Default Route
