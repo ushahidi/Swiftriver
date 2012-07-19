@@ -21,7 +21,7 @@ class Controller_Message extends Controller_Swiftriver {
 		parent::before();
 
 		// CHECK: Are you viewing own messages?
-		if ($this->user->username != $this->request->param('account'))
+		if ($this->account->account_path != $this->request->param('account'))
 			throw new HTTP_Exception_404();
 
 		$this->id = intval($this->request->param('id'));
@@ -64,7 +64,7 @@ class Controller_Message extends Controller_Swiftriver {
 			}
 		}
 
-		$this->template->header->title = $this->user->username." / Inbox";
+		$this->template->header->title = $this->user->name." / Inbox";
 		$this->template->content = View::factory('pages/message/inbox')
 			->bind('link_inbox', $link_inbox)
 			->bind('link_outbox', $link_outbox)
@@ -201,20 +201,20 @@ class Controller_Message extends Controller_Swiftriver {
 			return;
 		}
 
-		$recipient = ORM::factory('user')
-			->where('username', '=', $_POST['r'])
+		$recipient = ORM::factory('account')
+			->where('account_path', '=', $_POST['r'])
 			->find();
 
 		// CHECK: Is the recipient a real user?
-		if (is_null($recipient) OR $recipient->username != $_POST['r'])
+		if (is_null($recipient) OR $recipient->account_path != $_POST['r'])
 		{
 			$this->response->status(400);
-			echo json_encode("The recipient isn't a real user!");
+			echo json_encode("The recipient isn't a real account!");
 			return;
 		}
 
-		// CHECK: Is the recipient not you?
-		if ($this->user->username == $recipient->username)
+		// CHECK: Is the recipient you?
+		if ($this->account->account_path == $recipient->account_path)
 		{
 			$this->response->status(400);
 			echo json_encode("You can't send messages to yourself!");
@@ -222,11 +222,12 @@ class Controller_Message extends Controller_Swiftriver {
 		}
 
 		$last = ORM::factory('message')
+			->where('sender_id', '=', $this->user->id)
 			->order_by('timestamp', 'desc')
 			->find();
 
 		// CHECK: Was this message just sent?
-		if ($last->recipient == $_POST['r'] AND
+		if ($last->recipient->account->account_path == $_POST['r'] AND
 		    $last->subject == $_POST['s'] AND
 		    $last->message == $_POST['b'])
 		{
@@ -244,7 +245,7 @@ class Controller_Message extends Controller_Swiftriver {
 		}
 
 		$message = ORM::factory('message');
-		$message->recipient_id = $recipient->id;
+		$message->recipient_id = $recipient->user_id;
 		$message->sender_id = $this->user->id;
 		$message->subject = HTML::entities($_POST['s']);
 		$message->message = HTML::entities($_POST['b']);
