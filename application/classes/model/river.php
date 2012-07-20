@@ -41,12 +41,14 @@ class Model_River extends ORM {
 			'model' => 'user',
 			'through' => 'river_subscriptions',
 			'far_key' => 'user_id'
-			)		
+			),
+
+		// A river has many filters
+		'river_filters' => array(),
 		);
 	
 	/**
-	 * An account belongs to an account
-	 *
+	 * A river belongs to an account
 	 * @var array Relationhips
 	 */
 	protected $_belongs_to = array('account' => array());
@@ -899,6 +901,72 @@ class Model_River extends ORM {
 	{
 		return $this->river_collaborators
 		           ->where('collaborator_active', '=', 1);
+	}
+
+	/**
+	 * Gets the filters for the current river
+	 *
+	 * @param  bool  $filter_enabled  When TRUE, gets only the enabled filters
+	 * @return bool
+	 */
+	public function get_filters($filter_enabled = FALSE)
+	{
+		$query = ORM::factory('river_filter')
+		    ->select('id', 'filter', 'filter_enabled')
+		    ->where('river_id', '=', $this->id);
+
+		if ($filter_enabled)
+		{
+			$query->where('filter_enabled', '=', TRUE);
+		}
+
+		$filters_array = array();
+		$filters_orm = $query->find_all();
+		foreach ($filters_orm as $filter_orm)
+		{
+			$filters_array[] = array(
+				"id" => $filter_orm->id,
+				"filter" => $filter_orm->filter,
+				"enabled" => (bool) $filter_orm->filter_enabled,
+				"parameters" => $filter_orm->get_parameters_array()
+			);
+		}
+
+		return $filters_array;
+	}
+
+	/**
+	 * Gets the river with the specified name. If the filter
+	 * does not exist, one is created
+	 *
+	 * @return Model_River_Filter
+	 */
+	public function get_filter($filter_name)
+	{
+		$filter_orm = $this->river_filters
+		    ->where('filter', '=', $filter_name)
+		    ->find();
+
+		if ( ! $filter_orm->loaded())
+		{
+			$filter_orm = new Model_River_Filter();
+			$filter_orm->river_id = $this->id;
+			$filter_orm->filter = $filter_name;
+			$filter_orm->save();
+		}
+
+		return $filter_orm;
+	}
+
+	/**
+	 * Retrieves a filter using its database id
+	 *
+	 * @param  int  $filter_id Database ID of the filter
+	 * @return Model_River_Filter
+	 */
+	public function get_filter_by_id($filter_id)
+	{
+		return $this->river_filters->where('id',' =', $filter_id)->find();
 	}
 
 }

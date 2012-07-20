@@ -26,6 +26,12 @@ class Swiftriver {
 	const COOKIE_SEARCH_ITEM_ID = "search_item_id";
 
 	/**
+	 * Available content filtering options
+	 * @var array
+	 */
+	private static $content_filters = array();
+
+	/**
 	 * Application initialization
 	 *     - Loads the plugins
 	 *     - Sets the cookie configuration
@@ -94,6 +100,57 @@ class Swiftriver {
 		}
 		
 		return $file;
+	}
+
+
+	/**
+	 * Gets the list of available content filters and returns 
+	 * each a list of key => value arrays for each filter. These filters
+	 * can be used at the river or bucket level
+	 *
+	 * @return array
+	 */
+	public static function get_content_filters()
+	{
+		if ( ! empty(self::$content_filters))
+			return self::$content_filters;
+
+		$config_data = Kohana::$config->load('filters');
+
+		$filters = array();
+		foreach ($config_data as $filter => $config)
+		{
+			self::$content_filters[] = array(
+				'filter' => $filter,
+				'options' => array(
+					'name' => $config['name'],
+					'label' => $config['label'],
+					'placeholder' => $config['placeholder'],
+					'type' => $config['type']
+				)
+			);
+		}
+
+		return self::$content_filters;
+	}
+
+	/**
+	 * Given the name of a filter, returns its configuration
+	 *
+	 * @param  string  $filter_name Name of the filter
+	 * @return mixed   array when the filter exists, FALSE otherwise 
+	 */
+	public static function get_content_filter_config($filter_name)
+	{
+		$filters = self::get_content_filters();
+
+		foreach ($filters as $entry)
+		{
+			if ($entry['filter'] === $filter_name)
+				return $entry['options'];
+		}
+
+		return FALSE;
 	}
 
 }

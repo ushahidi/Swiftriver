@@ -33,7 +33,7 @@ class Model_Channel_Filter extends ORM {
 		'account' => array(),
 		'user' => array(),
 		'river' => array()
-		);
+	);
 
 	/**
 	 * Auto-update columns for updates
@@ -54,6 +54,12 @@ class Model_Channel_Filter extends ORM {
 	 */
 	public function delete()
 	{
+		// Run pre_delete events for the channel filter options
+		foreach ($this->channel_filter_options->find_all() as $option)
+		{
+			Swiftriver_Event::run("swiftriver.channel.option.pre_delete", $option);
+		}
+
 		// Delete the channel filter options
 		DB::delete('channel_filter_options')
 		    ->where('channel_filter_id', '=', $this->id)
@@ -174,15 +180,11 @@ class Model_Channel_Filter extends ORM {
 	public  function update_option($value, $id = 0)
 	{
 		$filter_option = ORM::factory('channel_filter_option', $id);
-		if ($filter_option->loaded())
-		{
-			Swiftriver_Event::run('swiftriver.channel.option.pre_delete', $filter_option);
-		}
 		$filter_option->channel_filter_id = $this->id;
-		$filter_option->key = $value['key'];		
+		$filter_option->key = $value['key'];
 		unset($value['key']);
 		$filter_option->value = json_encode($value);
-		$filter_option->save();
+		$filter_option->update();
 				
 		return $filter_option;
 	}
@@ -195,7 +197,10 @@ class Model_Channel_Filter extends ORM {
 	 */	
 	public  function delete_option($id)
 	{
-		$filter_option = ORM::factory('channel_filter_option', $id);
+		$filter_option = $this->channel_filter_options
+		    ->where('id', '=', $id)
+		    ->find();
+
 		if ($filter_option->loaded())
 		{
 			$filter_option->delete();
