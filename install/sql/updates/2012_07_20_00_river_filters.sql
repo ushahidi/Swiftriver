@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `river_filters` (
 -- -----------------------------------------------------
 -- Table `river_filter_parameters`
 -- -----------------------------------------------------
-CREATE TABLE `river_filter_parameters` (
+CREATE TABLE IF NOT EXISTS `river_filter_parameters` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `river_filter_id` bigint(20) NOT NULL,
   `parameter` varchar(255) NOT NULL,
