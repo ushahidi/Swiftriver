@@ -36,7 +36,11 @@
 				<?php echo __("Account Settings"); ?>
 			</a>
 		</li>
-
+		<li <?php if ($active == 'messages') echo 'class="active"'; ?>>
+			<a href="<?php echo URL::site().$account->account_path.'/messages'; ?>">
+				<?php echo __("Messages"); ?><?php if ($new_messages) echo ' ('.$new_messages.')'; ?>
+			</a>
+		</li>
 	</ul>
 </nav>
 <?php endif; ?>

@@ -71,6 +71,9 @@ class Controller_User extends Controller_Swiftriver {
 		// Save the username of the visitor
 		$username = $this->account->user->username;
 
+		// Get new private message count
+		$new_messages = Model_Message::count_unread($this->user->id);
+
 		$this->template->content = View::factory('pages/user/layout')
 			->bind('account', $this->visited_account)
 			->bind('username', $username)
@@ -80,8 +83,9 @@ class Controller_User extends Controller_Swiftriver {
 			->bind('anonymous', $this->anonymous)
 			->bind('followers', $followers)
 			->bind('following', $following)
-			->bind('view_type', $view_type);
-			
+			->bind('view_type', $view_type)
+			->bind('new_messages', $new_messages);
+
 		$following = $this->visited_account->user->following->find_all();
 		$followers =  $this->visited_account->user->followers->find_all();
 		$view_type = "dashboard";
@@ -113,21 +117,6 @@ class Controller_User extends Controller_Swiftriver {
 				->bind('owner', $this->owner)
 				->bind('account', $this->visited_account);
 			$gravatar_view = TRUE;
-
-			$messages = $this->user->get_preview_messages();
-
-			$link_inbox = route::url('messages', array(
-				'account' => $this->request->param('account'),
-				'action' => 'inbox'
-			));
-
-			$new_messages = Model_Message::count_unread($this->user->id);
-
-			$this->sub_content->has_messages = (count($messages) > 0);
-			$this->sub_content->new_messages = $new_messages;
-			$this->sub_content->messages_mini = View::factory('pages/message/mini')
-				->bind('link_inbox', $link_inbox)
-				->bind('messages', $messages);
 		}
 		else
 		{

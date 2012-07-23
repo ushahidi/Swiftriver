@@ -354,7 +354,8 @@ Route::set('messages', '<account>/messages(/<action>(/<id>))',
 		'id'     => '\d+'
 	))
 	->defaults(array(
-		'controller' => 'message',
+		'directory'  => 'user',
+		'controller' => 'messages',
 		'action'     => 'inbox'
 	));
 
