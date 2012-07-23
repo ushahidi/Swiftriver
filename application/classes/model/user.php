@@ -746,4 +746,13 @@ class Model_User extends Model_Auth_User {
 		return $is_admin;
 	}
 
+	public function get_preview_messages($max = 5)
+	{
+		return ORM::factory('message')
+			->where('recipient_id', '=', $this->id)
+			->order_by('read', 'asc')
+			->order_by('timestamp', 'desc')->limit($max)
+			->find_all()
+			->as_array();
+	}
 }
