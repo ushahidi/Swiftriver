@@ -18,12 +18,12 @@ class Controller_User extends Controller_Swiftriver {
 	/**
 	 * sub content
 	 */
-	private $sub_content;
+	protected $sub_content;
 	
 	/**
 	 * active
 	 */
-	private $active;
+	protected $active;
 	
 	/**
 	 * Is the visiting user the owner?
