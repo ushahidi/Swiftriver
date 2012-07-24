@@ -744,11 +744,6 @@ class Controller_User extends Controller_Swiftriver {
 
 		// SwiftRiver Plugin Hook -- Add Nav Items
 		Swiftriver_Event::run('swiftriver.dashboard.nav', $nav);
-
-<<<<<<< HEAD
-}
-=======
 		return $nav;
 	}
 }
->>>>>>> master
