@@ -739,7 +739,7 @@ class Controller_User extends Controller_Swiftriver {
 		$unread = ($unread > 0) ? ' ('.$unread.')' : '';
 		$nav[] = array(
 			'id'    => 'messages-navigation-link',
-			'url'   => '/messages/inbox',
+			'url'   => '/messages',
 			'label' => __('Messages').$unread
 		);
 

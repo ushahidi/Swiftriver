@@ -350,13 +350,13 @@ Route::set('account', '<account>(/<controller>/<name>(/<action>(/<id>(/<id2>))))
  */
 Route::set('messages', '<account>/messages(/<action>(/<id>))',
 	array(
-		'action' => '(inbox|outbox|create)',
+		'action' => '(index|inbox|outbox|create)',
 		'id'     => '\d+'
 	))
 	->defaults(array(
 		'directory'  => 'user',
 		'controller' => 'messages',
-		'action'     => 'inbox'
+		'action'     => 'index'
 	));
 
 /**

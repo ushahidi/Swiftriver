@@ -29,7 +29,58 @@ class Controller_User_Messages extends Controller_User {
 		$this->active = 'messages-navigation-link';
 		$this->id = intval($this->request->param('id'));
 	}
-	
+
+	public function action_index()
+	{
+		$this->inbox = ORM::factory('message')
+			->where('recipient_id', '=', $this->user->id)
+			->where('read', '=', 0)
+			->order_by('timestamp', 'desc')
+			->find_all()
+			->as_array();
+		
+		if (count($this->inbox) < 5)
+		{
+			$this->inbox = array_merge($this->inbox, ORM::factory('message')
+				->where('recipient_id', '=', $this->user->id)
+				->where('read', '=', 1)
+				->order_by('timestamp', 'desc')
+				->limit(5-count($this->inbox))
+				->find_all()
+				->as_array());
+		}
+		
+		$this->outbox = ORM::factory('message')
+			->where('sender_id', '=', $this->user->id)
+			->order_by('timestamp', 'desc')
+			->limit(5)
+			->find_all()
+			->as_array();
+
+		$link_inbox = route::url('messages', array(
+			'account' => $this->request->param('account'),
+			'action' => 'inbox'
+		));
+
+		$link_outbox = route::url('messages', array(
+			'account' => $this->request->param('account'),
+			'action' => 'outbox'
+		));
+
+		$link_create = route::url('messages', array(
+			'account' => $this->request->param('account'),
+			'action' => 'create'
+		));
+
+		$this->template->header->title = $this->user->name.' / '.__('Messages');
+		$this->sub_content = View::factory('pages/user/messages/index')
+			->bind('link_inbox',  $link_inbox)
+			->bind('link_outbox', $link_outbox)
+			->bind('link_create', $link_create)
+			->bind('inbox',       $this->inbox)
+			->bind('outbox',      $this->outbox);
+	}
+
 	public function action_inbox()
 	{
 		// CHECK: Are we reading a specific message?
@@ -166,20 +217,13 @@ class Controller_User_Messages extends Controller_User {
 		if (isset($_POST['a']))
 			return $this->action_send();
 
-		$link_inbox = route::url('messages', array(
+		$link_index = route::url('messages', array(
 			'account' => $this->request->param('account'),
-			'action' => 'inbox'
-		));
-
-		$link_outbox = route::url('messages', array(
-			'account' => $this->request->param('account'),
-			'action' => 'outbox'
 		));
 
 		$this->template->header->title = __("Send message");
 		$this->sub_content = View::factory('pages/user/messages/create')
-			->bind('link_inbox', $link_inbox)
-			->bind('link_outbox', $link_outbox);
+			->bind('link_index', $link_index);
 	}
 
 	public function action_send()

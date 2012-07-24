@@ -1,27 +1,26 @@
 <script type="text/javascript">
-	window.history.replaceState({}, 'Inbox', "<?php echo $link_outbox; ?>");
 	$(function() {
 		$('.messages tr').click(function(){
 			window.location.href = '<?php echo $link_outbox; ?>/'+$(this).attr('id');
 		});
 	});
 </script>
-<hgroup class="page-title bucket-title cf">
-	<div class="center">
-		<div class="page-h1 col_9">
-			<h1>Outbox</h1>
+<div id="content" class="messages outbox cf" align="center">
+	<hgroup class="page-title bucket-title cf">
+		<div class="center">
+			<div class="page-h1 col_9">
+				<h1>Outbox</h1>
+			</div>
+			<div class="page-actions col_3">
+				<h2 class="discussion">
+					<a href="<?php echo $link_inbox; ?>">
+						<span class="icon"></span>
+						Inbox
+					</a>
+				</h2>
+			</div>
 		</div>
-		<div class="page-actions col_3">
-			<h2 class="discussion">
-				<a href="<?php echo $link_inbox; ?>">
-					<span class="icon"></span>
-					Inbox
-				</a>
-			</h2>
-		</div>
-	</div>
-</hgroup>
-<div id="content" class="messages outbox center cf" align="center">
+	</hgroup>
 	<table>
 		<tbody><?php foreach ($messages as $m): ?>
 			<tr id="<?php echo $m->id; ?>" class="read">

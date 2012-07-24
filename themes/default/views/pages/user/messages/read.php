@@ -1,19 +1,19 @@
-<hgroup class="page-title cf">
-	<div class="center">
-		<div class="page-h1 col_9">
-			<h1><?php echo $message->subject ?></h1>
+<div id="content" class="messages message cf" align="center">
+	<hgroup class="page-title cf">
+		<div class="center">
+			<div class="page-h1 col_9">
+				<h1><?php echo $message->subject ?></h1>
+			</div>
+			<div class="page-actions col_3">
+				<h2 class="back">
+					<a href="<?php echo $link_back; ?>">
+						<span class="icon"></span>
+						Back to <?php echo $location; ?>
+					</a>
+				</h2>
+			</div>
 		</div>
-		<div class="page-actions col_3">
-			<h2 class="back">
-				<a href="<?php echo $link_back; ?>">
-					<span class="icon"></span>
-					Back to <?php echo $location; ?>
-				</a>
-			</h2>
-		</div>
-	</div>
-</hgroup>
-<div id="content" class="messages message center cf" align="center">
+	</hgroup>
 	<div class="message-content">
 		<p class="meta">
 			<a href="<?php echo URL::site($message->sender->username); ?>" title="View <?php echo $message->sender->name; ?>'s Profile">
@@ -26,7 +26,7 @@
 			</a>
 		</p>
 		<p class="timestamp">
-			<?php echo $message->relative_time(); ?>
+			<?php echo date('F jS, Y, h:m A', strtotime($message->timestamp)); ?> (<?php echo $message->relative_time(); ?>)
 		</p>
 		<p class="message-body">
 			<?php echo nl2br($message->message); ?>

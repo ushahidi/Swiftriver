@@ -10,7 +10,7 @@
 			$.post('create', data, function(response) {
 				$('p.message-status').css('color', 'green');
 				$('p.message-status').text(response);
-				window.location.href = '<?php echo $link_outbox; ?>';
+				window.location.href = '<?php echo $link_index; ?>';
 			}, 'json').error(function(response) {
 				$('p.message-status').css('color', 'red');
 				$('p.message-status').text($.parseJSON(response.responseText));
@@ -19,21 +19,6 @@
 		});
 	});
 </script>
-<hgroup class="page-title bucket-title cf">
-	<div class="center">
-		<div class="page-h1 col_9">
-			<h1>Send a message</h1>
-		</div>
-		<div class="page-actions col_3">
-			<h2 class="back">
-				<a href="<?php echo $link_inbox; ?>">
-					<span class="icon"></span>
-					Back to Inbox
-				</a>
-			</h2>
-		</div>
-	</div>
-</hgroup>
 <div id="content" class="message-create center cf" align="center">
 	<article class="container base">
 		<header class="cf">
@@ -64,7 +49,7 @@
 	</article>
 	<div class="save-toolbar visible">
 		<p class="button-blue"><a href="#" class="button-send">Send</a></p>
-		<p class="button-blank"><a href="<?php echo $link_inbox; ?>">Cancel</a></p>
+		<p class="button-blank"><a href="<?php echo $link_index; ?>">Cancel</a></p>
 		<p class="message-status"></p>
 	</div>
 </div>
