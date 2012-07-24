@@ -68,23 +68,15 @@ class Controller_User extends Controller_Swiftriver {
 			$this->request->redirect($this->dashboard_url);
 		}
 
-		// Save the username of the visitor
-		$username = $this->account->user->username;
-
-		// Get new private message count
-		$new_messages = Model_Message::count_unread($this->user->id);
-
 		$this->template->content = View::factory('pages/user/layout')
 			->bind('account', $this->visited_account)
-			->bind('username', $username)
 			->bind('owner', $this->owner)
 			->bind('active', $this->active)
 			->bind('sub_content', $this->sub_content)
 			->bind('anonymous', $this->anonymous)
 			->bind('followers', $followers)
 			->bind('following', $following)
-			->bind('view_type', $view_type)
-			->bind('new_messages', $new_messages);
+			->bind('view_type', $view_type);
 		$this->template->content->nav = $this->get_nav();
 
 		$following = $this->visited_account->user->following->find_all();
@@ -740,6 +732,15 @@ class Controller_User extends Controller_Swiftriver {
 			'id' => 'settings-navigation-link',
 			'url' => '/settings',
 			'label' => __('Settings')
+		);
+
+		// Messages
+		$unread = Model_Message::count_unread(Auth::instance()->get_user()->id);
+		$unread = ($unread > 0) ? ' ('.$unread.')' : '';
+		$nav[] = array(
+			'id'    => 'messages-navigation-link',
+			'url'   => '/messages/inbox',
+			'label' => __('Messages').$unread
 		);
 
 		// SwiftRiver Plugin Hook -- Add Nav Items

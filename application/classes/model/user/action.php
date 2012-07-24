@@ -314,9 +314,9 @@ class Model_User_Action extends ORM {
 			->where('confirmed', '!=', 1)
 			->execute()
 			->get('num_notification', 0);
-		
+
 		$m = Model_Message::count_unread($user_id);
-		
+
 		return $n+$m;
 	}
 }
