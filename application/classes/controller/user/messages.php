@@ -26,6 +26,7 @@ class Controller_User_Messages extends Controller_User {
 			$this->request->redirect($this->dashboard_url);
 		}
 
+		$this->active = 'messages-navigation-link';
 		$this->id = intval($this->request->param('id'));
 	}
 	
@@ -66,8 +67,8 @@ class Controller_User_Messages extends Controller_User {
 			}
 		}
 
-		$this->template->header->title = $this->user->name." / Inbox";
-		$this->template->content = View::factory('pages/message/inbox')
+		$this->template->header->title = $this->user->name.' / '.__('Inbox');
+		$this->sub_content = View::factory('pages/user/messages/inbox')
 			->bind('link_inbox', $link_inbox)
 			->bind('link_outbox', $link_outbox)
 			->bind('link_create', $link_create)
@@ -98,7 +99,7 @@ class Controller_User_Messages extends Controller_User {
 		));
 
 		$this->template->header->title = $this->message->subject;
-		$this->template->content = View::factory('pages/message/read')
+		$this->sub_content = View::factory('pages/user/messages/read')
 			->bind('link_back', $link_inbox)
 			->bind('link_create', $link_create)
 			->bind('location', $location)
@@ -127,8 +128,8 @@ class Controller_User_Messages extends Controller_User {
 			'action' => 'outbox'
 		));
 
-		$this->template->header->title = $this->user->username." / Outbox";
-		$this->template->content = View::factory('pages/message/outbox')
+		$this->template->header->title = $this->user->username.' / '.__('Outbox');
+		$this->sub_content = View::factory('pages/user/messages/outbox')
 			->bind('link_inbox', $link_inbox)
 			->bind('link_outbox', $link_outbox)
 			->bind('messages', $this->messages);
@@ -154,7 +155,7 @@ class Controller_User_Messages extends Controller_User {
 		));
 
 		$this->template->header->title = $this->message->subject;
-		$this->template->content = View::factory('pages/message/read')
+		$this->sub_content = View::factory('pages/user/messages/read')
 			->bind('link_back', $link_outbox)
 			->bind('location', $location)
 			->bind('message', $this->message);
@@ -175,7 +176,8 @@ class Controller_User_Messages extends Controller_User {
 			'action' => 'outbox'
 		));
 
-		$this->template->content = View::factory('pages/message/create')
+		$this->template->header->title = __("Send message");
+		$this->sub_content = View::factory('pages/user/messages/create')
 			->bind('link_inbox', $link_inbox)
 			->bind('link_outbox', $link_outbox);
 	}
