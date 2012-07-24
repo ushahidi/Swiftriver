@@ -38,7 +38,7 @@ class Controller_User_Messages extends Controller_User {
 			->order_by('timestamp', 'desc')
 			->find_all()
 			->as_array();
-		
+
 		if (count($this->inbox) < 5)
 		{
 			$this->inbox = array_merge($this->inbox, ORM::factory('message')
@@ -49,7 +49,7 @@ class Controller_User_Messages extends Controller_User {
 				->find_all()
 				->as_array());
 		}
-		
+
 		$this->outbox = ORM::factory('message')
 			->where('sender_id', '=', $this->user->id)
 			->order_by('timestamp', 'desc')
