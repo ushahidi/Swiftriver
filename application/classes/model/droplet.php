@@ -259,6 +259,8 @@ class Model_Droplet extends ORM {
 		$media_complete = array();
 		$place_values = NULL;
 		$place_check_query = NULL;
+		$drop_delete_query = NULL;
+		$purge_count = 0;
 		foreach ($drops as $key => $drop)
 		{
 			// Create an in memory drop reference
@@ -280,6 +282,22 @@ class Model_Droplet extends ORM {
 					{
 						$river_check_query = $subquery->union($river_check_query, TRUE);
 					}
+				}
+			}
+
+			// Build out the query to purge drops from a river
+			// The drops to be purged are the ones that did not match
+			// the specified river filters
+			if (isset($drop['skip_rivers']))
+			{
+				foreach ($drop['skip_rivers'] as $river_id)
+				{
+					if ($drop_delete_query)
+					{
+						$drop_delete_query .=  " UNION ALL ";
+					}
+					$drop_delete_query .= sprintf("SELECT %s droplet_id, %s river_id", $drop['id'], $river_id);
+					$purge_count++;
 				}
 			}
 			
@@ -414,7 +432,22 @@ class Model_Droplet extends ORM {
 				}
 			}
 		}
-		
+
+		// Purge drops from rivers
+		if ( ! empty($drop_delete_query))
+		{
+			$sql = "DELETE t1 FROM `rivers_droplets` AS t1 INNER JOIN (%s) AS t2 "
+			    . "WHERE t1.river_id = t2.river_id "
+			    . "AND t1.droplet_id = t2.droplet_id";
+
+			Kohana::$log->add(Log::INFO, "Purging :count entries from rivers_droplets",
+			    array(":count" => $purge_count));
+
+			DB::query(Database::DELETE, sprintf($sql, $drop_delete_query))->execute();
+
+			unset ($drop_delete_query, $purge_count);
+		}
+						
 		// Find river drops already in the DB
 		$existing_river_drops = DB::select('droplet_id', 'river_id')
 									->from('rivers_droplets')
