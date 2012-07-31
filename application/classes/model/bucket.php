@@ -211,7 +211,6 @@ class Model_Bucket extends ORM {
 				->join('links', 'LEFT')
 			    ->on('links.id', '=', 'droplets.original_url')
 				->where('buckets_droplets.bucket_id', '=', $bucket_id)
-				->where('droplets.processing_status', '=', Model_Droplet::PROCESSING_STATUS_COMPLETE)
 				->where('droplets.parent_id', '=', 0);
 				
 			if ($drop_id)
@@ -317,7 +316,6 @@ class Model_Bucket extends ORM {
 				->join('links', 'LEFT')
 			    ->on('links.id', '=', 'droplets.original_url')
 				->where('buckets_droplets.bucket_id', '=', $bucket_id)
-				->where('droplets.processing_status', '=', Model_Droplet::PROCESSING_STATUS_COMPLETE)
 				->where('droplets.parent_id', '=', 0)
 				->where('buckets_droplets.id', '>', $since_id)
 				->order_by('buckets_droplets.id', 'ASC');

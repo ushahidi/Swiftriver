@@ -259,8 +259,6 @@ class Model_Droplet extends ORM {
 		$media_complete = array();
 		$place_values = NULL;
 		$place_check_query = NULL;
-		$drop_delete_query = NULL;
-		$purge_count = 0;
 		foreach ($drops as $key => $drop)
 		{
 			// Create an in memory drop reference
@@ -285,22 +283,6 @@ class Model_Droplet extends ORM {
 				}
 			}
 
-			// Build out the query to purge drops from a river
-			// The drops to be purged are the ones that did not match
-			// the specified river filters
-			if (isset($drop['skip_rivers']))
-			{
-				foreach ($drop['skip_rivers'] as $river_id)
-				{
-					if ($drop_delete_query)
-					{
-						$drop_delete_query .=  " UNION ALL ";
-					}
-					$drop_delete_query .= sprintf("SELECT %s droplet_id, %s river_id", $drop['id'], $river_id);
-					$purge_count++;
-				}
-			}
-			
 			// Create a query to insert tags into droplets_tags
 			if (isset($drop['tags']))
 			{
@@ -433,27 +415,12 @@ class Model_Droplet extends ORM {
 			}
 		}
 
-		// Purge drops from rivers
-		if ( ! empty($drop_delete_query))
-		{
-			$sql = "DELETE t1 FROM `rivers_droplets` AS t1 INNER JOIN (%s) AS t2 "
-			    . "WHERE t1.river_id = t2.river_id "
-			    . "AND t1.droplet_id = t2.droplet_id";
-
-			Kohana::$log->add(Log::INFO, "Purging :count entries from rivers_droplets",
-			    array(":count" => $purge_count));
-
-			DB::query(Database::DELETE, sprintf($sql, $drop_delete_query))->execute();
-
-			unset ($drop_delete_query, $purge_count);
-		}
-						
 		// Find river drops already in the DB
 		$existing_river_drops = DB::select('droplet_id', 'river_id')
-									->from('rivers_droplets')
-									->where('droplet_id', 'IN', array_keys($drops_idx))
-									->execute()
-									->as_array();
+		                            ->from('rivers_droplets')
+		                            ->where('droplet_id', 'IN', array_keys($drops_idx))
+		                            ->execute()
+		                            ->as_array();
 		
 		// Find the new river drops we are just about to add
 		$new_river_drops = NULL;
@@ -463,8 +430,9 @@ class Model_Droplet extends ORM {
 			Swiftriver_Mutex::obtain('rivers_droplets', 3600);
 			
 			$sub = DB::select('droplet_id', 'river_id')
-						->from('rivers_droplets')
-						->where('droplet_id', 'IN', array_keys($drops_idx));
+			            ->from('rivers_droplets')
+			            ->where('droplet_id', 'IN', array_keys($drops_idx));
+
 			$new_river_drops = DB::select('droplet_id', 'river_id')
 						->distinct(TRUE)
 						->from(array($river_check_query, 'a'))
@@ -579,12 +547,12 @@ class Model_Droplet extends ORM {
 			if ($new_river_drops)
 			{
 				$drop_tags = DB::select('droplet_id', 'tags.id', 'tag', 'tag_type')
-											->from('droplets_tags')
-											->join('tags', 'INNER')
-										    ->on('droplets_tags.tag_id', '=', 'tags.id')
-											->where('droplet_id', 'IN', array_keys($drops_idx))
-											->execute()
-											->as_array();
+				                ->from('droplets_tags')
+				                ->join('tags', 'INNER')
+				                ->on('droplets_tags.tag_id', '=', 'tags.id')
+				                ->where('droplet_id', 'IN', array_keys($drops_idx))
+				                ->execute()
+				                ->as_array();
 				foreach ($drop_tags as $drop_tag)
 				{
 					if ( ! isset($all_drop_tags[$drop_tag['droplet_id']]))
@@ -669,13 +637,13 @@ class Model_Droplet extends ORM {
 		if ($place_check_query)
 		{
 			$sub = DB::select('droplet_id', 'place_id')
-						->from('droplets_places')
-						->where('droplet_id', 'IN', array_keys($drops_idx));
+			            ->from('droplets_places')
+			            ->where('droplet_id', 'IN', array_keys($drops_idx));
 			$new_places = DB::select('droplet_id', 'place_id')
-						->from(array($place_check_query, 'a'))
-						->where(DB::expr('(`droplet_id`, `place_id`)'), 'NOT IN', $sub)
-						->execute()
-						->as_array();
+			                ->from(array($place_check_query, 'a'))
+			                ->where(DB::expr('(`droplet_id`, `place_id`)'), 'NOT IN', $sub)
+			                ->execute()
+			                ->as_array();
 			foreach ($new_places as $new_place)
 			{
 				if ( ! isset($new_drop_places[$new_place['droplet_id']]))
@@ -705,14 +673,17 @@ class Model_Droplet extends ORM {
 			if ($new_river_drops)
 			{
 				$drop_places = DB::select('droplet_id', 'places.id', 'place_name')
-											->from('droplets_places')
-											->join('places', 'INNER')
-										    ->on('droplets_places.place_id', '=', 'places.id')
-											->where('droplet_id', 'IN', array_keys($drops_idx))
-											->execute()
-											->as_array();
-				foreach ($drop_places as $drop_place) {
-					if ( ! isset($all_drop_places[$drop_place['droplet_id']])) {
+				                    ->from('droplets_places')
+				                    ->join('places', 'INNER')
+				                    ->on('droplets_places.place_id', '=', 'places.id')
+				                    ->where('droplet_id', 'IN', array_keys($drops_idx))
+				                    ->execute()
+				                    ->as_array();
+
+				foreach ($drop_places as $drop_place)
+				{
+					if ( ! isset($all_drop_places[$drop_place['droplet_id']]))
+					{
 						$all_drop_places[$drop_place['droplet_id']] = array();
 					}
 					$all_drop_places[$drop_place['droplet_id']][] = array(
@@ -1112,11 +1083,10 @@ class Model_Droplet extends ORM {
 		}
 		
 		//Query account media belonging to the selected droplet IDs
-		$query_account = DB::select('droplet_id', array('media.id', 'id'), 
-										array('media.url', 'url'), 'type',
-										array('media_thumbnails.size', 'thumbnail_size'), 
-										array('media_thumbnails.url', 'thumbnail_url')
-									)
+		$query_account = DB::select('droplet_id', array('media.id', 'id'),
+		                            array('media.url', 'url'), 'type',
+		                            array('media_thumbnails.size', 'thumbnail_size'),
+		                            array('media_thumbnails.url', 'thumbnail_url'))
 					->from('account_droplet_media')
 					->join('media', 'INNER')
 					->on('media.id', '=', 'media_id')
@@ -1134,19 +1104,18 @@ class Model_Droplet extends ORM {
 		    ->where('deleted', '=', 1);
 		
 		//Query all media belonging to the selected droplet IDs
-		$query_media = DB::select('droplet_id', array('media.id', 'id'), 
-										array('media.url', 'url'), 'type',
-										array('media_thumbnails.size', 'thumbnail_size'), 
-										array('media_thumbnails.url', 'thumbnail_url')
-								)
-					->union($query_account, TRUE)
-					->from('droplets_media')
-					->join('media', 'INNER')
-					->on('media.id', '=', 'media_id')
-					->join('media_thumbnails', 'LEFT')
-					->on('media_thumbnails.media_id', '=', 'media.id')
-					->where('droplet_id', 'IN', $droplet_ids)
-					->where('media.id', 'NOT IN', $query_deleted_media);
+		$query_media = DB::select('droplet_id', array('media.id', 'id'),
+			                      array('media.url', 'url'), 'type',
+			                      array('media_thumbnails.size', 'thumbnail_size'),
+			                      array('media_thumbnails.url', 'thumbnail_url'))
+		                ->union($query_account, TRUE)
+		                ->from('droplets_media')
+		                ->join('media', 'INNER')
+		                ->on('media.id', '=', 'media_id')
+		                ->join('media_thumbnails', 'LEFT')
+		                ->on('media_thumbnails.media_id', '=', 'media.id')
+		                ->where('droplet_id', 'IN', $droplet_ids)
+		                ->where('media.id', 'NOT IN', $query_deleted_media);
 				
 		// Group the thumbnails per url
 		$media = array();
@@ -1188,11 +1157,11 @@ class Model_Droplet extends ORM {
 		
 		// Get the droplet image
 		//Query account media belonging to the selected droplet IDs
-		$query_drop_image = DB::select(array('droplets.id', 'droplet_id'), array('media.id', 'id'), 
-										array('media.url', 'url'),
-										array('media_thumbnails.size', 'thumbnail_size'), 
-										array('media_thumbnails.url', 'thumbnail_url')
-										)		            
+		$query_drop_image = DB::select(array('droplets.id', 'droplet_id'),
+		                               array('media.id', 'id'),
+		                               array('media.url', 'url'),
+		                               array('media_thumbnails.size', 'thumbnail_size'),
+		                               array('media_thumbnails.url', 'thumbnail_url'))		            
 					->from('droplets')
 					->join('media', 'INNER')
 					->on('droplets.droplet_image', '=', 'media.id')
@@ -1320,9 +1289,9 @@ class Model_Droplet extends ORM {
 		$droplet_score = $droplet_array['droplet_score'];
 		
 		$droplet_score_orm = ORM::factory('droplet_score')
-							->where('droplet_id', '=', $this->id)
-							->where('user_id', '=', $droplet_score['user_id'])
-							->find();
+		    ->where('droplet_id', '=', $this->id)
+		    ->where('user_id', '=', $droplet_score['user_id'])
+		    ->find();
 		
 		// Set the values, if a score already exists... change it.
 		$droplet_score_orm->droplet_id = $this->id;
@@ -1568,19 +1537,18 @@ class Model_Droplet extends ORM {
 
 			// Build Buckets Query
 			$query = DB::select(array('droplets.id', 'id'), 
-				    array(DB::expr('UNIX_TIMESTAMP(droplets.droplet_date_add)'), 'sort_id'),
-				    'droplet_title', 'droplet_content', 
-				    'droplets.channel','identity_name', 'identity_avatar', 
-				    array(DB::expr('DATE_FORMAT(droplet_date_pub, "%b %e, %Y %H:%i UTC")'),'droplet_date_pub'),
-				    array(DB::expr('SUM(all_scores.score)'),'scores'), array('user_scores.score','user_score'))
-				->from('droplets')
-				->join('identities')
-				->on('droplets.identity_id', '=', 'identities.id')
-				->join(array('droplet_scores', 'all_scores'), 'LEFT')
+			            array(DB::expr('UNIX_TIMESTAMP(droplets.droplet_date_add)'), 'sort_id'),
+			            'droplet_title', 'droplet_content',
+			            'droplets.channel','identity_name', 'identity_avatar',
+			            array(DB::expr('DATE_FORMAT(droplet_date_pub, "%b %e, %Y %H:%i UTC")'),'droplet_date_pub'),
+			            array(DB::expr('SUM(all_scores.score)'),'scores'), array('user_scores.score','user_score'))
+			    ->from('droplets')
+			    ->join('identities')
+			    ->on('droplets.identity_id', '=', 'identities.id')
+			    ->join(array('droplet_scores', 'all_scores'), 'LEFT')
 			    ->on('all_scores.droplet_id', '=', 'droplets.id')
 			    ->join(array('droplet_scores', 'user_scores'), 'LEFT')
 			    ->on('user_scores.droplet_id', '=', DB::expr('droplets.id AND user_scores.user_id = '.$user_id))
-			    ->where('droplets.processing_status', '=', Model_Droplet::PROCESSING_STATUS_COMPLETE)
 			    ->where('droplets.parent_id', '=', 0);
 
 			self::apply_droplets_filter($query, $filters, $user_id);
