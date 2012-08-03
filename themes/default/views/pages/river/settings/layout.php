@@ -21,14 +21,14 @@
 				<li class="touchcarousel-item <?php if ($active == 'channels' OR ! $active) echo 'active'; ?>">
 					<a href="<?php echo $river_base_url.'/settings/channels'; ?>"><?php echo __("Channels"); ?></a>
 				</li>
+				<li class="touchcarousel-item <?php if ($active == 'filters' OR ! $active) echo 'active'; ?>">
+					<a href="<?php echo $river_base_url.'/settings/filters'; ?>"><?php echo __("River Filters"); ?></a>
+				</li>
 				<li class="touchcarousel-item <?php if ($active == 'collaborators' OR ! $active) echo 'active'; ?>">
 					<a href="<?php echo $river_base_url.'/settings/collaborators'; ?>"><?php echo __("Collaborators"); ?></a>
 				</li>
 				<li class="touchcarousel-item <?php if ($active == 'display' OR ! $active) echo 'active'; ?>">
 					<a href="<?php echo $river_base_url.'/settings/display'; ?>"><?php echo __("Display"); ?></a>
-				</li>
-				<li class="touchcarousel-item <?php if ($active == 'filters' OR ! $active) echo 'active'; ?>">
-					<a href="<?php echo $river_base_url.'/settings/filters'; ?>"><?php echo __("River Filters"); ?></a>
 				</li>
 			</ul>
 		</div>
