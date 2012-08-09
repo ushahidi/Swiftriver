@@ -24,8 +24,8 @@
 						</div>
 						<div class="parameter">
 							<label for="river_url">
-								<p class="field"><?php echo __('Who can see it'); ?></p>
-								<select name="river_public">
+								<p class="field"><?php echo __('Who can see it?'); ?></p>
+								<select class="field" name="river_public">
 									<option value="1"><?php echo __('Public (Anyone)'); ?></option>
 									<option value="0"><?php echo __('Private (Collaborators only)'); ?></option>
 								</select>						

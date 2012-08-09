@@ -22,43 +22,41 @@
 	</div>
 </div>
 
-<script type="text/template" id="add-filters-dialog-template">
-	<hgroup class="page-title cf">
-		<div class="page-h1 col_9"><h1><?php echo __("Add Filter"); ?></h1></div>
-		<div class="page-actions col_3">
-			<h2 class="close">
-				<a href="#"><span class="icon"></span><?php echo __("Close"); ?></a>
-			</h2>
-		</div>
-	</hgroup>
-
-	<div class="modal-body select-list">
-		<form class="filters">
-			<!-- AVAILABLE FILTERS WILL GO HERE -->
-		</form>
-	</div>
-</script>
-
-<script type="text/template" id="add-filters-dialog-item-template">
-	<input type="checkbox" name="<%= filter %>" <%= added ? "checked" : "" %> />
-	<%= options.name %>
-</script>
-
 <!-- Filter template (A filter and it's filter parameters) -->
 <script type="text/template" id="filter-template">
 	<header class="cf">
 		<a href="#" class="remove-large"><span class="icon"></span><span class="nodisplay"><?php echo __("Remove"); ?></span></a>
 		<div class="property-title">
+			<% if (name == null || name == undefined) { %>
+			<h1><?php echo __("Create new Filter"); ?></h1>
+			<% } else {%>
 			<h1><%= name %></h1>
 			<div class="popover add-parameter">
 				<p class="button-white has-icon add">
-					<a href="#" class="parameter-trigger"><span class="icon"></span><%= "Add " + label %></a>
+					<a href="#" class="popover-trigger"><span class="icon"></span><?php echo __("Add Parameter"); ?></a>
 				</p>
+				<ul class="popover-window base"></ul>
 			</div>
+			<% } %>
 		</div>
 	</header>
 	<section class="property-parameters filter-parameters">
+	<% if (name == null || name == undefined) { %>
+	<div class="parameter">
+		<label>
+			<p class="field"><?php echo __("Filter name"); ?></p>
+			<input type="text" name="filter_name" placeholder="<?php echo __('Name your filter'); ?>"/>
+			<p class="actions" style="display:none;"><span class="button-blue"><a class="save"><?php echo __("Save"); ?></a></span></p>
+		</label>
+		<div style="clear: both;"></div>
+	</div>
+	<% }%>
 	</section>
+</script>
+
+<!-- Template for the parameter types (places, tags, keywords etd) -->
+<script type="text/template" id="filter-parameter-type-template">
+<a href="#"><%= options.name %></a>
 </script>
 
 <!-- Filter parameter template  -->
@@ -107,17 +105,17 @@ $(function() {
 	var FilterConfigList = Backbone.Collection.extend({
 		model: FilterConfig,
 
-		// Gets the configuration for a given filter item
-		getFilterConfig: function(filter) {
+		// Gets the configuration for a given filter type
+		getFilterConfig: function(filterType) {
 			return this.find(function(config) {
-				return config.get("filter") == filter
+				return config.get("type") == filterType;
 			}, this);
 		},
 
 		// Gets the value of a single config item for the specified
 		// filter
-		getFilterConfigOption: function(filter, key) {
-			var config = this.getFilterConfig(filter);
+		getFilterConfigOption: function(filterType, key) {
+			var config = this.getFilterConfig(filterType);
 			return config.get('options')[key];
 		}
 	});
@@ -141,9 +139,9 @@ $(function() {
 		url: baseURL + "/manage",
 
 		// Get the filter (model) with the specified name
-		getFilter: function(filterName) {
+		getFilter: function(filterType) {
 			return this.find(function(filter) {
-				return filter.get("filter") === filterName;
+				return filter.get("type") === filterType;
 			}, this);
 		},
 
@@ -164,62 +162,33 @@ $(function() {
 		model: FilterParameter
 	});
 
-	// Single filter in the "Add Filters" modal dialog
-	var AddFiltersItemView = Backbone.View.extend({
+	
+	/**
+	 * Single filter parameter type view
+	 */
+	var FilterParameterTypeView = Backbone.View.extend({
 
-		tagName: "label",
+		tagName: "li",
 
-		template: _.template($("#add-filters-dialog-item-template").html()),
+		template: _.template($("#filter-parameter-type-template").html()),
 
 		events: {
-			"change input": "toggleFilter"
+			"click a": "addFilterParameter",
+		},
+
+		addFilterParameter: function(e) {
+			this.options.filterView.filterParameters.add({
+				type: this.model.get("type"),
+				value: null
+			});
+			this.$el.parents(".popover-window").fadeOut('fast').unbind();
+			return false;
 		},
 
 		render: function() {
 			this.$el.html(this.template(this.model.toJSON()));
 			return this;
-		},
-
-		toggleFilter: function(e) {
-			var filter = filters.getFilter(this.model.get("filter"));
-			if (filter !== undefined) {
-				// Filter exists, toggle its enabled state
-				filter.toggleEnabled();
-			} else {
-				// Filter doesn't exist in the river, create it
-				filters.create({filter: this.model.get("filter")}, {
-					wait: true,
-				});
-			}
-
-			return false;
 		}
-	});
-
-	// The "Add Filters" modal dialog
-	var AddFiltersView = Backbone.View.extend({
-
-		tagName: "article",
-
-		className: "modal",
-
-		template: _.template($("#add-filters-dialog-template").html()),
-
-		render: function() {
-			this.$el.html(this.template()),
-
-			// Render the filters list
-			filtersConfig.each(function(config) {
-				// Set flag to denote whether the filter has been added to the river
-				var filter  = filters.getFilter(config.get("filter"));
-				config.set("added", filter !== undefined && filter.get("enabled"));
-
-				var view = new AddFiltersItemView({model: config});
-				this.$("form.filters").append(view.render().el);
-			}, this);
-
-			return this;
-		},
 	});
 
 	/**
@@ -256,12 +225,12 @@ $(function() {
 			
 			input = _.template($("#edit-filter-parameter-template").html());
 
-			var filterName = this.model.get("filter");
-			var inputType = filtersConfig.getFilterConfigOption(filterName, "type");
+			var filterType = this.model.get("type");
+			var inputType = filtersConfig.getFilterConfigOption(filterType, "type");
 			return input({
 				type: inputType,
-				placeholder: inputType === "text" ? filtersConfig.getFilterConfigOption(filterName, "placeholder") : "",
-				filter: filterName,
+				placeholder: inputType === "text" ? filtersConfig.getFilterConfigOption(filterType, "placeholder") : "",
+				filter: filterType,
 				value: this.model.get("value")
 			});
 
@@ -269,7 +238,7 @@ $(function() {
 
 		render: function() {
 			var data = this.model.toJSON();
-			data.label = filtersConfig.getFilterConfigOption(this.model.get("filter"), "label");
+			data.label = filtersConfig.getFilterConfigOption(this.model.get("type"), "label");
 			data.input = this.getInputField();
 			data.renderMode = this.renderMode;
 			this.$el.html(this.template(data));
@@ -362,7 +331,7 @@ $(function() {
 				return false;
 			} else {
 				var newValue = $.trim(this.$("input[type=text]").val());
-				if(newValue != "" && newValue && newValue != this.model.get("value")) {
+				if(newValue != "" && newValue !== null && newValue != this.model.get("value")) {
 					this.showSaveButton();
 				} else {
 					this.hideSaveButton();
@@ -388,7 +357,8 @@ $(function() {
 
 		events: {
 			"click a.remove-large": "confirmDeleteFilter",
-			"click a.parameter-trigger": "showAddFilterParameter",
+			"click a.save": "save",
+			"keyup input": "toggleSaveButton"
 		},
 
 		initialize: function() {
@@ -417,21 +387,32 @@ $(function() {
 		},
 
 		confirmDeleteFilter: function(e) {
-			new ConfirmationWindow("Remove this filter?", this.deleteFilter, this).show();
+			if (this.model.get("id") == undefined) {
+				this.deleteFilter();
+			} else {
+				new ConfirmationWindow("Remove this filter?", this.deleteFilter, this).show();
+			}
 			return false;
 		},
 
 		showAddFilterParameter: function(e) {
 			this.filterParameters.add(new FilterParameter({
 				value: null,
-				filter: this.model.get("filter")
+				type: this.model.get("filter")
 			}));
 			return false;
 		},
 
 		render: function() {
-			var configOptions = filtersConfig.getFilterConfig(this.model.get("filter")).get("options");
-			this.$el.html(this.template(configOptions));
+			this.$el.html(this.template(this.model.toJSON()));
+
+			if (this.model.get("id") !== undefined) {
+				var target = this;
+				filtersConfig.each(function(entry) {
+					var view = new FilterParameterTypeView({model: entry, filterView: target});
+					target.$("ul.popover-window").append(view.render().el)
+				}, this);
+			}
 
 			// Render the filter parameters
 			this.filterParameters.each(this.addFilterParameter, this);
@@ -439,10 +420,65 @@ $(function() {
 			return this;
 		},
 
+		// Save a newly created filter
+		save: function(e) {
+			this.$("input").attr("readonly")
+			var filterName = this.$("input").val();
+			var view = this;
+
+			this.model.save({name: filterName},{
+				wait: true,
+				success: function() {
+					$(this).remove();
+					view.initialize();
+					view.render();
+				},
+				// Error handling
+				error: function(model, response){
+					var message = "Oops, unable to save. Try again";
+					if (response.status == 400) {
+						message = JSON.parse(response.responseText)["error"];
+					}
+					var error_msg = $('<span class="error-message">' + message + '</span>');
+					loading_msg.replaceWith(error_msg).remove();
+					view.$("input").removeAttr("readonly");
+				}
+			});
+			return false;
+		},
+
+		// Displays the save button
+		showSaveButton: function() {
+			this.$("span.error-message").remove();
+			this.$("a.save").parents("p.actions").fadeIn("slow");
+		},
+
+		// Hides the save button
+		hideSaveButton: function() {
+			var newValue = this.$("input[type=text]").val();
+			if( ! newValue || newValue == this.model.get("value")) {
+				this.$("a.save").parents("p.actions").fadeOut();
+			}
+		},
+
+		toggleSaveButton: function(e) {
+			var value = $(e.currentTarget).val();
+			if (value !== "" && value !== null) {
+				this.showSaveButton()
+			} else {
+				this.hideSaveButton();
+			}
+			return false;
+		},
+
 		deleteFilter: function() {
 			var view = this;
-			this.model.destroy();
-			view.$el.fadeOut("slow");
+			this.model.destroy({
+				wait: true,
+				success: function() {
+					view.$el.slideUp("slow");
+				}
+			});
 		},
 	});
 
@@ -452,7 +488,7 @@ $(function() {
 		el: "div.filters",
 
 		events: {
-			"click .settings-toolbar p.create a": "showAddFiltersDialog"
+			"click .settings-toolbar p.create a": "showCreateFilterBlock"
 		},
 
 		initialize: function() {
@@ -474,17 +510,16 @@ $(function() {
 			filters.each(this.addFilter, this);
 		},
 
-		showAddFiltersDialog: function(e) {
-			var addFiltersView = new AddFiltersView();
-			modalShow(addFiltersView.render().el);
+		showCreateFilterBlock: function(e) {
+			filters.add({name: null});
 			return false;
 		},
 
 		// Verifies whether there are any active filters
 		// and toggles the display of the notification message
 		checkEmpty: function() {
-			if (filters.length && filters.activeFilters()) {
-				this.$("div.alert-message").fadeOut("slow");
+			if (filters.length) {
+				this.$("div.alert-message").slideUp("slow");
 			} else {
 				this.$("div.alert-message").fadeIn("slow");
 			}

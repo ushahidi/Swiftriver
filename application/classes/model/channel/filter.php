@@ -184,8 +184,16 @@ class Model_Channel_Filter extends ORM {
 		$filter_option->key = $value['key'];
 		unset($value['key']);
 		$filter_option->value = json_encode($value);
-		$filter_option->update();
-				
+
+		if ($filter_option->loaded())
+		{
+			$filter_option->update();
+		}
+		else
+		{
+			$filter_option->save();
+		}
+
 		return $filter_option;
 	}
 	

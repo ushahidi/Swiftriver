@@ -2,7 +2,7 @@
 	<div class="center">
 		<div class="col_12">
 			<div class="settings-toolbar">
-				<p class="button-blue button-small create"><a href="/markup/modal-channels.php" class="modal-trigger"><span class="icon"></span>Add channels</a></p>
+				<p class="button-blue button-small create"><a href="#" class="modal-trigger"><span class="icon"></span>Add channels</a></p>
 			</div>
 
 			<div class="alert-message blue" style="display:none;">
@@ -440,9 +440,6 @@ $(function() {
 			var view = this;
 			this.model.save({'value': value}, {
 				wait: true,
-				complete: function() {
-
-				},
 				success: function() {
 					var success_msg = $('<span class="success-message">Saved</span>');
 					loading_msg.replaceWith(success_msg).remove();					
@@ -550,7 +547,7 @@ $(function() {
 		deleteChannel: function() {
 			var view = this;
 			this.model.destroy();
-			view.$el.fadeOut("slow");
+			view.$el.slideUp("slow");
 		}
 	});
 	
@@ -589,7 +586,7 @@ $(function() {
 		
 		checkEmpty: function(model) {
 			if (channels.length && channels.numActive()) {
-				this.$(".alert-message").fadeOut('slow');
+				this.$(".alert-message").slideUp('slow');
 			} else {
 				this.$(".alert-message").fadeIn('slow');
 			}

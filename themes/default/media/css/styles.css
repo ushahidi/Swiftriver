@@ -1323,7 +1323,8 @@ article.container div.parameter p.field {
 }
 article.container div.parameter input[type="text"],
 article.container div.parameter input[type="email"],
-article.container div.parameter input[type="password"] {
+article.container div.parameter input[type="password"],
+article.container div.parameter select.field {
   width: 50%;
   margin-left: 30px;
 }

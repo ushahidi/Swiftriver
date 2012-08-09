@@ -121,7 +121,7 @@ class Swiftriver {
 		foreach ($config_data as $filter => $config)
 		{
 			self::$content_filters[] = array(
-				'filter' => $filter,
+				'type' => $filter,
 				'options' => array(
 					'name' => $config['name'],
 					'label' => $config['label'],

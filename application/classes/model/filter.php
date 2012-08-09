@@ -14,22 +14,14 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License v3 (GPLv3) 
  */
 
-class Model_River_Filter extends ORM {
-
-	/**
-	 * Relationships
-	 * @var array
-	 */
-	protected $_belongs_to = array(
-		'river' => array()
-	);
+class Model_Filter extends ORM {
 
 	/**
 	 * One-to-many relationship definition
 	 * @var array
 	 */
 	protected $_has_many = array(
-		'river_filter_parameters' => array()
+		'filter_parameters' => array()
 	);
 
 	/**
@@ -48,7 +40,7 @@ class Model_River_Filter extends ORM {
 			// Determine the action to be taken
 			$action  = $this->filter_enabled ? "activate" : "deactivate";
 
-			$params = $this->river_filter_parameters->find_all();
+			$params = $this->filter_parameters->find_all();
 			foreach ($params as $param)
 			{
 				Swiftriver_Event::run("swiftriver.filter.parameter.".$action, $param);
@@ -62,7 +54,7 @@ class Model_River_Filter extends ORM {
 	 */
 	public function get_parameters()
 	{
-		return $this->river_filter_parameters->find_all();
+		return $this->filter_parameters->find_all();
 	}
 
 	/**
@@ -79,7 +71,7 @@ class Model_River_Filter extends ORM {
 		{
 			$params_array[] = array(
 				"id" => $param->id,
-				"filter" => $this->filter,
+				"type" => $param->parameter_type,
 				"value" => $param->parameter
 			);
 		}
@@ -94,9 +86,13 @@ class Model_River_Filter extends ORM {
 	 */
 	public function delete()
 	{
-		foreach ($this->river_filter_parameters->find_all() as $param)
+		// Execute pre-delete events
+		Swiftriver_Event::run("swiftriver.filter.pre_delete", $this);
+
+		// Delete the filter parameters
+		if ($this->filter_parameters->count_all() > 0)
 		{
-			$param->delete();
+			$this->filter_parameters->delete();
 		}
 		parent::delete();
 	}
@@ -107,16 +103,20 @@ class Model_River_Filter extends ORM {
      *
 	 * @param  array  $param_data Parameter to be added
 	 * @param  int    $parameter_id ID of the parameter to the be updated
-	 * @return mixed  Model_River_Filter_Parameter on success, FALSE otherwise
+	 * @return mixed  Filter_Parameter on success, FALSE otherwise
 	 */
 	public function update_parameter($param_data, $parameter_id = 0)
 	{
 		try
 		{
-			$parameter_orm = ORM::factory('river_filter_parameter', $parameter_id);
+			$parameter_orm = $this->filter_parameters
+			    ->where('id', '=', $parameter_id)
+			    ->find();
+
 			if ( ! $parameter_orm->loaded())
-			{
-				$parameter_orm->river_filter_id = $this->id;
+			{				
+				$parameter_orm->filter_id = $this->id;
+				$parameter_orm->parameter_type = $param_data["type"];
 				$parameter_orm->parameter = $param_data["value"];
 				$parameter_orm->save();
 			}

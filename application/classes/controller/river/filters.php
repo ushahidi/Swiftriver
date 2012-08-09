@@ -44,7 +44,7 @@ class Controller_River_Filters extends Controller_River_Settings {
 			case 'POST':
 				// Add a new filter
 				$filter_array = json_decode($this->request->body(), TRUE);
-				$filter_orm = $this->river->get_filter($filter_array["filter"]);
+				$filter_orm = $this->river->get_filter($filter_array["name"]);
 
 				if ( ! $filter_orm->filter_enabled)
 				{
@@ -54,7 +54,7 @@ class Controller_River_Filters extends Controller_River_Settings {
 
 				echo json_encode(array(
 					"id" => $filter_orm->id,
-					"filter" => $filter_orm->filter,
+					"name" => $filter_orm->filter_name,
 					"enabled" => (bool) $filter_orm->filter_enabled,
 					"parameters" => $filter_orm->get_parameters_array()
 				));
@@ -65,7 +65,7 @@ class Controller_River_Filters extends Controller_River_Settings {
 				$filter_array = json_decode($this->request->body(), TRUE);
 
 				$filter_id = $this->request->param('id', 0);
-				$filter_orm = ORM::factory('river_filter', $filter_id);
+				$filter_orm = ORM::factory('filter', $filter_id);
 				if ($filter_orm->loaded())
 				{
 					$filter_orm->filter_enabled = $filter_array["enabled"];
@@ -76,7 +76,7 @@ class Controller_River_Filters extends Controller_River_Settings {
 
 			case 'DELETE':
 				$filter_id = $this->request->param('id', 0);
-				ORM::factory('river_filter', $filter_id)->delete();
+				ORM::factory('filter', $filter_id)->delete();
 			break;
 		}
 	}
@@ -109,7 +109,7 @@ class Controller_River_Filters extends Controller_River_Settings {
 				{
 					echo json_encode(array(
 						"id" => $param_orm->id,
-						"filter" => $param_data["filter"],
+						"type" => $param_data["type"],
 						"value" => $param_orm->parameter
 					));
 				}
@@ -121,7 +121,7 @@ class Controller_River_Filters extends Controller_River_Settings {
 
 			case 'DELETE':
 				// Delete the river filter parameter
-				ORM::factory('river_filter_parameter', $param_id)->delete();
+				ORM::factory('filter_parameter', $param_id)->delete();
 			break;
 		}
 

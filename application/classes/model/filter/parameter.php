@@ -1,7 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Model for the river_filter_parameters table
+ * Model for the filter_parameters table
  *
  * PHP version 5
  * LICENSE: This source file is subject to GPLv3 license 
@@ -14,14 +14,14 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License v3 (GPLv3) 
  */
 
-class Model_River_Filter_Parameter extends ORM {
+class Model_Filter_Parameter extends ORM {
 
 	/**
 	 * Many-to-one relationship definition
 	 * @var array
 	 */	
 	protected $_belongs_to = array(
-		'river_filter' => array()
+		'filter' => array()
 	);
 
 
@@ -30,7 +30,7 @@ class Model_River_Filter_Parameter extends ORM {
 	 */
 	public function update(Validation $validation = NULL)
 	{
-		if ($this->pk() !== NULL AND $this->changed())
+		if ($this->pk() !== NULL AND $this->changed('parameter'))
 		{
 			Kohana::$log->add(Log::INFO, "Updating filter parameter ".$this->id);
 
@@ -47,7 +47,7 @@ class Model_River_Filter_Parameter extends ORM {
 	 *
 	 * @param Validation $validation When specified, applies the validation rules before saving
 	 *
-	 * @return Model_River_Filter_Item
+	 * @return Model_Filter_Item
 	 */
 	public function save(Validation $validation = NULL)
 	{
@@ -64,6 +64,7 @@ class Model_River_Filter_Parameter extends ORM {
 	public function delete()
 	{
 		Kohana::$log->add(Log::INFO, "Deleting filter parameter ".$this->id);
+
 		Swiftriver_Event::run('swiftriver.filter.parameter.pre_delete', $this);
 
 		parent::delete();

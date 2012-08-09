@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS `rivers` (
   `expiry_extension_token` varchar(64),
   `extension_count` int(11) NOT NULL DEFAULT '0' COMMENT 'The no. of times the expiry date has been extended',
   `expiry_candidate` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Flags whether the river has been marked for expiry',
+  `river_create_complete` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Whether the river creation process is complete',
   PRIMARY KEY (`id`),
   UNIQUE KEY `un_river_name_url` (`account_id`,`river_name_url`),
   KEY `river_name_url` (`river_name_url`),
@@ -783,30 +784,31 @@ CREATE TABLE IF NOT EXISTS `droplet_comments` (
   KEY `droplet_id` (`droplet_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- -----------------------------------------------------
+-- Table `filters`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `filters` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `filter_target` varchar(20) NOT NULL DEFAULT COMMENT 'Object on which the filter is to be applied i.e. river or bucket',
+  `filter_target_id` bigint(20) NOT NULL COMMENT 'ID of the filter target i.e. river|bucket id',
+  `filter_name` varchar(50) NOT NULL COMMENT 'Name of the filter',
+  `filter_date_add` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Creation date of the filter',
+  `filter_enabled` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Is the filter active?',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `un_filter` (`filter_target`,`filter_target_id`,`filter_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- -----------------------------------------------------
--- Table `river_filters`
+-- Table `filter_parameters`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `river_filters` (
+CREATE TABLE IF NOT EXISTS `filter_parameters` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `river_id` bigint(20) unsigned NOT NULL,
-  `filter` varchar(15) NOT NULL,
-  `filter_date_add` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `filter_enabled` tinyint(1) NOT NULL DEFAULT '1',
+  `filter_id` bigint(20) NOT NULL,
+  `parameter_type` varchar(50) NOT NULL COMMENT 'Type of the filter parameter e.g. place, tags, keyword/phrase etc',
+  `parameter` varchar(255) NOT NULL COMMENT 'Parameter value',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `un_river_filter_type` (`river_id`,`filter`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8;
-
--- -----------------------------------------------------
--- Table `river_filter_parameters`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `river_filter_parameters` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `river_filter_id` bigint(20) NOT NULL,
-  `parameter` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `un_river_filter_parameter` (`river_filter_id`,`parameter`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+  UNIQUE KEY `un_filter_parameter` (`filter_id`,`parameter_type`,`parameter`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------------------
 -- TABLE 'sequence'
