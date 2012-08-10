@@ -80,7 +80,7 @@ class Model_River extends ORM {
 
 		if ($this->pk() !== NULL AND $this->changed('river_create_complete'))
 		{
-			Swiftriver_Event::run('swiftiver.river.creation_complete', $this);
+			Swiftriver_Event::run('swiftriver.river.creation_complete', $this);
 		}
 		return parent::update($validation);
 	}
@@ -873,11 +873,11 @@ class Model_River extends ORM {
 	/**
 	 * Toggles the status of the channel options for the current river
 	 *
-	 * @param bool $activate When TRUE, activates the channel options for
+	 * @param bool $enable When TRUE, enables the channel options for
 	 * the river. When FALSE, removes the channel options from the crawling
 	 * schedule
 	 */
-	private function _toggle_channel_option_status($activate)
+	private function _toggle_channel_option_status($enable)
 	{
 		// Get all the channel filter options
 		$channel_options = ORM::factory('channel_filter_option')
@@ -889,13 +889,10 @@ class Model_River extends ORM {
 		    ->find_all();
 
 		// Status - determines the action to be taken on the channel options
-		$new_status = $activate ? "activate" : "deactivate";
+		$status = $enable ? "enable" : "disable";
+		$event_key = sprintf("swiftriver.river.%s", $status);
 
-		foreach ($channel_options as $option)
-		{
-			// Run deactivation events for each option
-			Swiftriver_Event::run('swiftriver.channel.option.'.$new_status, $option);
-		}
+		Swiftriver_Event::run($event_key, $this);
 
 		// Garbage collection
 		unset ($channel_options);
@@ -983,7 +980,6 @@ class Model_River extends ORM {
 		    ->where('filter_target_id', '=', $this->id)
 		    ->find();
 	}
-
 
 	/**
 	 * Given the ID of a river, checks whether the user

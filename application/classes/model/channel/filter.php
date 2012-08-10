@@ -55,10 +55,7 @@ class Model_Channel_Filter extends ORM {
 	public function delete()
 	{
 		// Run pre_delete events for the channel filter options
-		foreach ($this->channel_filter_options->find_all() as $option)
-		{
-			Swiftriver_Event::run("swiftriver.channel.option.pre_delete", $option);
-		}
+		Swiftriver_Event::run("swiftriver.channel.pre_delete", $this);
 
 		// Delete the channel filter options
 		DB::delete('channel_filter_options')
@@ -67,6 +64,35 @@ class Model_Channel_Filter extends ORM {
 
 		// Default
 		parent::delete();
+	}
+
+	/**
+	 * Overrides the default update behaviour
+	 */
+	public function update(Validation $validation = NULL)
+	{
+		// Only run the events when the channel has option data
+		// attached to it
+		if
+		(
+			$this->pk() !== NULL AND
+			$this->changed('filter_enabled') AND
+			$this->channel_filter_options->count_all() > 0
+		)
+		{
+			if ($this->filter_enabled == 0)
+			{
+				// The channel is being disabled
+				Swiftriver_Event::run("swiftriver.channel.disable", $this);
+			}
+			elseif ($this->filter_enabled == 1)
+			{
+				// The channel is being enabled
+				Swiftriver_Event::run("swiftriver.channel.enable", $this);
+			}
+		}
+
+		return parent::update($validtion);
 	}
 
 	/**

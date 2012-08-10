@@ -31,25 +31,6 @@ class Model_Filter extends ORM {
 	protected $_created_column = array('column' => 'filter_date_add', 'format' => 'Y-m-d H:i:s');
 
 	/**
-	 * Override default update behaviour
-	 */
-	public function update(Validation $validation = NULL)
-	{
-		if ($this->pk() !== NULL AND $this->changed())
-		{
-			// Determine the action to be taken
-			$action  = $this->filter_enabled ? "activate" : "deactivate";
-
-			$params = $this->filter_parameters->find_all();
-			foreach ($params as $param)
-			{
-				Swiftriver_Event::run("swiftriver.filter.parameter.".$action, $param);
-			}
-		}
-		return parent::update($validation);
-	}
-
-	/**
 	 * Gets the parameters for the current filter
 	 */
 	public function get_parameters()
