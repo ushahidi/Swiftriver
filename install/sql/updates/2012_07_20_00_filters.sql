@@ -3,7 +3,7 @@
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `filters` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `filter_target` varchar(20) NOT NULL COMMENT 'Object on which the filter is to be applied i.e. river or bucket',
+  `filter_target` varchar(20) NOT NULL DEFAULT 'river' COMMENT 'Object on which the filter is to be applied i.e. river or bucket',
   `filter_target_id` bigint(20) NOT NULL COMMENT 'ID of the filter target i.e. river|bucket id',
   `filter_name` varchar(50) NOT NULL COMMENT 'Name of the filter',
   `filter_date_add` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Creation date of the filter',
