@@ -33,7 +33,7 @@ class Model_Channel_Filter extends ORM {
 		'account' => array(),
 		'user' => array(),
 		'river' => array()
-		);
+	);
 
 	/**
 	 * Auto-update columns for updates
@@ -54,6 +54,9 @@ class Model_Channel_Filter extends ORM {
 	 */
 	public function delete()
 	{
+		// Run pre_delete events for the channel filter options
+		Swiftriver_Event::run("swiftriver.channel.pre_delete", $this);
+
 		// Delete the channel filter options
 		DB::delete('channel_filter_options')
 		    ->where('channel_filter_id', '=', $this->id)
@@ -61,6 +64,35 @@ class Model_Channel_Filter extends ORM {
 
 		// Default
 		parent::delete();
+	}
+
+	/**
+	 * Overrides the default update behaviour
+	 */
+	public function update(Validation $validation = NULL)
+	{
+		// Only run the events when the channel has option data
+		// attached to it
+		if
+		(
+			$this->pk() !== NULL AND
+			$this->changed('filter_enabled') AND
+			$this->channel_filter_options->count_all() > 0
+		)
+		{
+			if ($this->filter_enabled == 0)
+			{
+				// The channel is being disabled
+				Swiftriver_Event::run("swiftriver.channel.disable", $this);
+			}
+			elseif ($this->filter_enabled == 1)
+			{
+				// The channel is being enabled
+				Swiftriver_Event::run("swiftriver.channel.enable", $this);
+			}
+		}
+
+		return parent::update($validtion);
 	}
 
 	/**
@@ -174,16 +206,20 @@ class Model_Channel_Filter extends ORM {
 	public  function update_option($value, $id = 0)
 	{
 		$filter_option = ORM::factory('channel_filter_option', $id);
-		if ($filter_option->loaded())
-		{
-			Swiftriver_Event::run('swiftriver.channel.option.pre_delete', $filter_option);
-		}
 		$filter_option->channel_filter_id = $this->id;
-		$filter_option->key = $value['key'];		
+		$filter_option->key = $value['key'];
 		unset($value['key']);
 		$filter_option->value = json_encode($value);
-		$filter_option->save();
-				
+
+		if ($filter_option->loaded())
+		{
+			$filter_option->update();
+		}
+		else
+		{
+			$filter_option->save();
+		}
+
 		return $filter_option;
 	}
 	
@@ -195,7 +231,10 @@ class Model_Channel_Filter extends ORM {
 	 */	
 	public  function delete_option($id)
 	{
-		$filter_option = ORM::factory('channel_filter_option', $id);
+		$filter_option = $this->channel_filter_options
+		    ->where('id', '=', $id)
+		    ->find();
+
 		if ($filter_option->loaded())
 		{
 			$filter_option->delete();

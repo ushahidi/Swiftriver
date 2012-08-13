@@ -8,9 +8,18 @@
 
 	<nav class="page-navigation cf">
 		<ul class="center">
-			<li <?php echo ($step == 'name') ? 'class="active"' : '';?>><a href="<?php echo URL::site().$account_path.'/river/create'; ?>"><?php echo __('1. Name your river'); ?></a></li>
-			<li <?php echo ($step == 'open') ? 'class="active"' : '';?>><a href="<?php echo $open_url; ?>"><?php echo __('2. Open channels'); ?></a></li>
-			<li <?php echo ($step == 'view') ? 'class="active"' : '';?>><a href="<?php echo $view_url; ?>"><?php echo __('3. View your river'); ?></a></li>
+			<li <?php echo ($step == 'name') ? 'class="active"' : '';?>>
+				<a href="<?php echo URL::site().$account_path.'/river/create'; ?>"><?php echo __('1. Name your river'); ?></a>
+			</li>
+			<li <?php echo ($step == 'channels') ? 'class="active"' : '';?>>
+				<a href="<?php echo $open_url; ?>"><?php echo __('2. Add channels'); ?></a>
+			</li>
+			<li <?php echo ($step == 'filters') ? 'class="active"' : '';?>>
+				<a href="<?php echo $filters_url; ?>"><?php echo __('3. Add Filters'); ?></a>
+			</li>
+			<li <?php echo ($step == 'finish') ? 'class="active"' : '';?>>
+				<a href="<?php echo $view_url; ?>"><?php echo __('4. View your river'); ?></a>
+			</li>
 		</ul>
 	</nav>
 

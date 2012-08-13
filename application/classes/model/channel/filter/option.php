@@ -21,19 +21,29 @@ class Model_Channel_Filter_Option extends ORM {
 	 */
 	protected $_belongs_to = array(
 		'channel_filter' => array()
-		);
+	);
 	
+	public function update(Validation $validation = NULL)
+	{
+		if ($this->pk() !== NULL AND $this->changed())
+		{
+			Swiftriver_Event::run("swiftriver.channel.option.pre_delete", $this);
+		}
+
+		return parent::update($validation);
+	}
+
 	/**
 	 * Overload saving to perform additional functions on the channel_filter
 	 */
 	public function save(Validation $validation = NULL)
 	{
-		$ret = parent::save();
+		$result = parent::save($validation);
 		
 		// Run post_save events
 		Swiftriver_Event::run('swiftriver.channel.option.post_save', $this);
 		
-		return $ret;
+		return $result;
 	}
 	
 	/**

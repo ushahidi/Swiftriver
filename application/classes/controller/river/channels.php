@@ -68,7 +68,7 @@ class Controller_River_Channels extends Controller_River_Settings {
 				$channel_array = json_decode($this->request->body(), TRUE);
 				$channel_orm = $this->river->get_channel($channel_array['channel']);
 				$channel_orm->filter_enabled = $channel_array['enabled'];
-				$channel_orm->save();
+				$channel_orm->update();
 			break;
 			case "DELETE":
 				$channel_id = intval($this->request->param('id', 0));

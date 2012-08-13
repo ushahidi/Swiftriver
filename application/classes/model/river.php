@@ -41,12 +41,11 @@ class Model_River extends ORM {
 			'model' => 'user',
 			'through' => 'river_subscriptions',
 			'far_key' => 'user_id'
-			)		
-		);
+			),
+	);
 	
 	/**
-	 * An account belongs to an account
-	 *
+	 * A river belongs to an account
 	 * @var array Relationhips
 	 */
 	protected $_belongs_to = array('account' => array());
@@ -72,6 +71,19 @@ class Model_River extends ORM {
 			)
 		);
 	}
+
+	/**
+	 * Overrides default update behaviour
+	 * @param    Validation  $validation
+	 */
+	public function update(Validation $validation = NULL) {
+
+		if ($this->pk() !== NULL AND $this->changed('river_create_complete'))
+		{
+			Swiftriver_Event::run('swiftriver.river.creation_complete', $this);
+		}
+		return parent::update($validation);
+	}
 	
 
 	/**
@@ -94,7 +106,7 @@ class Model_River extends ORM {
 		// Set river_name_url to the sanitized version of river_name sanitized
 		$this->river_name_url = URL::title($this->river_name);
 
-		$river = parent::save();
+		$river = parent::save($validation);
 
 		// Swiftriver Plugin Hook -- execute after saving a river
 		Swiftriver_Event::run('swiftriver.river.save', $river);
@@ -297,8 +309,7 @@ class Model_River extends ORM {
 			    ->join('identities', 'INNER')
 			    ->on('droplets.identity_id', '=', 'identities.id')
 				->where('rivers_droplets.droplet_date_pub', '>', '0000-00-00 00:00:00')
-			    ->where('rivers_droplets.river_id', '=', $river_id)
-			    ->where('droplets.processing_status', '=', Model_Droplet::PROCESSING_STATUS_COMPLETE);
+			    ->where('rivers_droplets.river_id', '=', $river_id);
 			
 			if ($drop_id)
 			{
@@ -399,7 +410,6 @@ class Model_River extends ORM {
 			    ->on('rivers_droplets.droplet_id', '=', 'droplets.id')
 			    ->join('identities', 'INNER')
 			    ->on('droplets.identity_id', '=', 'identities.id')
-			    ->where('droplets.processing_status', '=', Model_Droplet::PROCESSING_STATUS_COMPLETE)
 			    ->where('rivers_droplets.river_id', '=', $river_id)
 			    ->where('rivers_droplets.id', '>', $since_id);
 			
@@ -895,11 +905,11 @@ class Model_River extends ORM {
 	/**
 	 * Toggles the status of the channel options for the current river
 	 *
-	 * @param bool $activate When TRUE, activates the channel options for
+	 * @param bool $enable When TRUE, enables the channel options for
 	 * the river. When FALSE, removes the channel options from the crawling
 	 * schedule
 	 */
-	private function _toggle_channel_option_status($activate)
+	private function _toggle_channel_option_status($enable)
 	{
 		// Get all the channel filter options
 		$channel_options = ORM::factory('channel_filter_option')
@@ -911,13 +921,10 @@ class Model_River extends ORM {
 		    ->find_all();
 
 		// Status - determines the action to be taken on the channel options
-		$new_status = $activate ? "activate" : "deactivate";
+		$status = $enable ? "enable" : "disable";
+		$event_key = sprintf("swiftriver.river.%s", $status);
 
-		foreach ($channel_options as $option)
-		{
-			// Run deactivation events for each option
-			Swiftriver_Event::run('swiftriver.channel.option.'.$new_status, $option);
-		}
+		Swiftriver_Event::run($event_key, $this);
 
 		// Garbage collection
 		unset ($channel_options);
@@ -933,6 +940,100 @@ class Model_River extends ORM {
 		           ->where('collaborator_active', '=', 1);
 	}
 
+	/**
+	 * Gets the filters for the current river
+	 *
+	 * @param  bool  $filter_enabled  When TRUE, gets only the enabled filters
+	 * @return bool
+	 */
+	public function get_filters($filter_enabled = FALSE)
+	{
+		$query = ORM::factory('filter')
+		    ->select('id', 'filter_name', 'filter_enabled')
+		    ->where('filter_target', '=', 'river')
+		    ->where('filter_target_id', '=', $this->id);
+
+		if ($filter_enabled)
+		{
+			$query->where('filter_enabled', '=', TRUE);
+		}
+
+		$filters_array = array();
+		$filters_orm = $query->find_all();
+		foreach ($filters_orm as $filter_orm)
+		{
+			$filters_array[] = array(
+				"id" => $filter_orm->id,
+				"name" => $filter_orm->filter_name,
+				"enabled" => (bool) $filter_orm->filter_enabled,
+				"parameters" => $filter_orm->get_parameters_array()
+			);
+		}
+
+		return $filters_array;
+	}
+
+	/**
+	 * Gets the river with the specified name. If the filter
+	 * does not exist, one is created
+	 *
+	 * @return Model_Filter
+	 */
+	public function get_filter($filter_name)
+	{
+		$filter_orm = ORM::factory('filter')
+		    ->where('filter_target', '=', 'river')
+		    ->where('filter_name', '=', $filter_name)
+		    ->where('filter_target_id', '=', $this->id)
+		    ->find();
+
+		if ( ! $filter_orm->loaded())
+		{
+			$filter_orm = new Model_Filter();
+			$filter_orm->filter_target = "river";
+			$filter_orm->filter_target_id = $this->id;
+			$filter_orm->filter_name = $filter_name;
+			$filter_orm->save();
+		}
+
+		return $filter_orm;
+	}
+
+	/**
+	 * Retrieves a filter using its database id
+	 *
+	 * @param  int  $filter_id Database ID of the filter
+	 * @return Model_Filter
+	 */
+	public function get_filter_by_id($filter_id)
+	{
+		return ORM::factory('filter')
+		    ->where('id', '=', $filter_id)
+		    ->where('filter_target_id', '=', $this->id)
+		    ->find();
+	}
+
+	/**
+	 * Given the ID of a river, checks whether the user
+	 * finished creating it
+	 *
+	 * @param  int  $river_id ID of the river
+	 * @return bool
+	 */
+	public static function is_creation_complete($river_id)
+	{
+		return (bool) ORM::factory('river', $river_id)->river_create_complete;
+	}
+
+	/**
+	 * Marks the river creation as complete. This triggers the
+	 * "swiftriver.river.creation_complete" event
+	 */
+	public function complete_creation()
+	{
+		$this->river_create_complete = 1;
+		return $this->update();
+	}
 }
 
 ?>

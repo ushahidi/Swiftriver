@@ -1323,7 +1323,8 @@ article.container div.parameter p.field {
 }
 article.container div.parameter input[type="text"],
 article.container div.parameter input[type="email"],
-article.container div.parameter input[type="password"] {
+article.container div.parameter input[type="password"],
+article.container div.parameter select.field {
   width: 50%;
   margin-left: 30px;
 }
@@ -1998,7 +1999,7 @@ article.modal div.search ul.dual-buttons {
     width: auto;
   }
   nav.page-navigation .settings ul.touchcarousel-container li a {
-    width: 70px;
+    width: 80px;
   }
   .pagination .button-blue a .label {
     display: inline-block;
