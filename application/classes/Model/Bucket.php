@@ -35,7 +35,7 @@ class Model_Bucket extends ORM {
 		'bucket_collaborators' => array(),
 
 		// A bucket has many collaborators
-		'comments' => array(),		
+		'bucket_comments' => array(),		
 
 		// A bucket has many subscribers
 		'subscriptions' => array(
@@ -137,6 +137,7 @@ class Model_Bucket extends ORM {
 		return array(
 			"id" => $this->id, 
 			"name" => $this->bucket_name,
+			"type" => 'bucket',
 			"url" => URL::site().$this->account->account_path.'/bucket/'.$this->bucket_name_url,
 			"account_id" => $this->account->id,
 			"user_id" => $this->account->user->id,
@@ -385,6 +386,7 @@ class Model_Bucket extends ORM {
 			$collaborators[] = array(
 				'id' => $collaborator->user->id, 
 				'name' => $collaborator->user->name,
+				'email' => $collaborator->user->email,
 				'account_path' => $collaborator->user->account->account_path,
 				'collaborator_active' => $collaborator->collaborator_active,
 				'read_only' => (bool) $collaborator->read_only,
@@ -405,11 +407,12 @@ class Model_Bucket extends ORM {
 	{
 		$comments = array();
 		$i = 0;	
-		foreach ($this->comments->find_all() as $comment)
+		foreach ($this->bucket_comments->find_all() as $comment)
 		{
 			$comments[$i] = array(
 				'id' => $comment->id, 
 				'name' => $comment->user->name,
+				'user_id' => $comment->user->id,
 				'comment_content' => $comment->comment_content,
 				'date' => $comment->comment_date_add,
 				'avatar' => Swiftriver_Users::gravatar($comment->user->email, 40),
@@ -419,7 +422,7 @@ class Model_Bucket extends ORM {
 			// Attach [signed in] users score
 			if ($user_id)
 			{
-				foreach ($comment->comment_scores
+				foreach ($comment->bucket_comment_scores
 					->where('user_id', '=', $user_id)
 					->find_all() as $score)
 				{
@@ -517,6 +520,7 @@ class Model_Bucket extends ORM {
 		if ($this->bucket_collaborators
 				->where('user_id', '=', $user_orm->id)
 				->where('read_only', '!=', 1)
+				->where('collaborator_active', '=', 1)
 				->find()
 				->loaded())
 		{
@@ -732,6 +736,29 @@ class Model_Bucket extends ORM {
 	public function is_valid_token($token)
 	{
 		return $token == $this->public_token AND isset($this->public_token);
+	}
+	
+	/**
+	 * Return the list of buckets that have the given IDs
+	 *
+	 * @param    Array $ids List of bucket ids
+	 * @return   Database_Result Model_Bucket array
+	 */
+	
+	public static function get_buckets($ids)
+	{
+		$buckets = array();
+		
+		if ( ! empty($ids))
+		{
+			$query = ORM::factory('Bucket')
+						->where('id', 'IN', $ids);
+
+			// Execute query and return results
+			$buckets = $query->find_all();
+		}
+		
+		return $buckets;
 	}
 
 }

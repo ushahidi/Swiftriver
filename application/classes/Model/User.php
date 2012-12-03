@@ -492,20 +492,20 @@ class Model_User extends Model_Auth_User {
 		$mail_body = NULL;
 		if ($invite)
 		{
-			$mail_body = View::factory('emails/invite')
+			$mail_body = View::factory('emails/text/invite')
 						 ->bind('secret_url', $secret_url);
 			$mail_body->site_name = Model_Setting::get_setting('site_name');
 			$mail_subject = __(':sitename Invite!', array(':sitename' => Model_Setting::get_setting('site_name')));
 		}
 		else
 		{
-			$mail_body = View::factory('emails/createuser')
+			$mail_body = View::factory('emails/text/createuser')
 						 ->bind('secret_url', $secret_url);
 			$mail_subject = __(':sitename: Please confirm your email address', 
 				array(':sitename' => Model_Setting::get_setting('site_name')));
 		}
 		$secret_url = url::site('login/create/'.urlencode($email).'/%token%', TRUE, TRUE);
-		$site_email = Kohana::$config->load('site.email_address');
+		$site_email = Swiftriver_Mail::get_default_address();
 		
 		$response = $riverid_api->request_password($email, $mail_body, $mail_subject, $site_email);
 		
@@ -546,7 +546,7 @@ class Model_User extends Model_Auth_User {
 				$mail_subject = NULL;
 				if ($invite)
 				{
-					$mail_body = View::factory('emails/invite')
+					$mail_body = View::factory('emails/text/invite')
 								 ->bind('secret_url', $secret_url);
 					$mail_body->site_name = Model_Setting::get_setting('site_name');
 					$mail_subject = __(':sitename Invite!', 
@@ -554,7 +554,7 @@ class Model_User extends Model_Auth_User {
 				}
 				else
 				{
-					$mail_body = View::factory('emails/createuser')
+					$mail_body = View::factory('emails/text/createuser')
 								 ->bind('secret_url', $secret_url);
 					$mail_subject = __(':sitename: Please confirm your email address', 
 						array(':sitename' => Model_Setting::get_setting('site_name')));
@@ -600,10 +600,10 @@ class Model_User extends Model_Auth_User {
 	private static function password_reset_riverid($email)
 	{
 		$riverid_api = RiverID_API::instance();		            
-		$mail_body = View::factory('emails/resetpassword')
+		$mail_body = View::factory('emails/text/resetpassword')
 					 ->bind('secret_url', $secret_url);		            
 		$secret_url = url::site('login/reset/'.urlencode($email).'/%token%', TRUE, TRUE);
-		$site_email = Kohana::$config->load('site.email_address');
+		$site_email = Swiftriver_Mail::get_default_address();
 		$mail_subject = __(':sitename: Password Reset', array(':sitename' => Model_Setting::get_setting('site_name')));
 		$response = $riverid_api->request_password($email, $mail_body, $mail_subject, $site_email);
 		
@@ -631,7 +631,7 @@ class Model_User extends Model_Auth_User {
 		if ($auth_token->loaded())
 		{
 			//Send an email with a secret token URL
-			$mail_body = View::factory('emails/resetpassword')
+			$mail_body = View::factory('emails/text/resetpassword')
 						 ->bind('secret_url', $secret_url);		            
 			$secret_url = url::site('login/reset/'.urlencode($email).'/'.$auth_token->token, TRUE, TRUE);
 			$mail_subject = __(':sitename: Password Reset', array(':sitename' => Model_Setting::get_setting('site_name')));
@@ -751,5 +751,50 @@ class Model_User extends Model_Auth_User {
 		
 		return $is_admin;
 	}
+	
+	
+	/**
+	 * Return the list of users who have the given user IDs
+	 *
+	 * @param    Array $ids List of user ids
+	 * @return   Array Model_User array
+	 */
+	
+	public static function get_users($ids)
+	{
+		$users = Array();
+		
+		if ( ! empty($ids))
+		{
+			$query = ORM::factory('User')
+						->where('id', 'IN', $ids);
 
+			// Execute query and return results
+			$users = $query->find_all();
+		}
+		
+		return $users;
+	}
+	
+	/**
+	 * Return user registered with the provided email address
+	 *
+	 * @param    string $email
+	 * @return   Model_User
+	 */
+	public static function get_user_by_email($email)
+	{
+		return ORM::factory('User',array('email'=>$email));
+	}
+	
+	/**
+	 * Get the user's dashboard URL
+	 *
+	 * @return   string
+	 */
+	
+	public function get_profile_url()
+	{
+		return URL::site($this->account->account_path);
+	}
 }

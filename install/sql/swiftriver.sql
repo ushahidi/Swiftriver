@@ -179,9 +179,9 @@ CREATE TABLE IF NOT EXISTS `rivers_droplets` (
 
 
 -- -----------------------------------------------------
--- Table `comments`
+-- Table `bucket_comments`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `comments` (
+CREATE TABLE IF NOT EXISTS `bucket_comments` (
   `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT ,
   `bucket_id` INT(11) unsigned NOT NULL DEFAULT 0,  
   `user_id` INT(11) UNSIGNED NOT NULL DEFAULT 0 ,
@@ -192,6 +192,7 @@ CREATE TABLE IF NOT EXISTS `comments` (
   `comment_sticky` TINYINT(4) NOT NULL DEFAULT 0 ,
   `comment_deleted` TINYINT(4) NOT NULL DEFAULT 0 ,
   PRIMARY KEY (`id`) ,
+  INDEX `bucket_id_idx` (`bucket_id` ASC) ),
   INDEX `comment_date_add_idx` (`comment_date_add` ASC) )
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
@@ -609,7 +610,8 @@ CREATE TABLE IF NOT EXISTS `user_actions` (
   PRIMARY KEY (`id`),
   KEY `user_id_idx` (`user_id`),
   KEY `action_on_idx` (`action_to_id`),
-  KEY `action_on_id_idx` (`action_on_id`)
+  KEY `action_on_id_idx` (`action_on_id`),
+  KEY (`action_on`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Tracks user actions across the system';
 
 
@@ -685,35 +687,6 @@ CREATE TABLE IF NOT EXISTS `auth_tokens` (
 
 
 -- ----------------------------------------
--- VIEW 'activity_stream'
--- ----------------------------------------
-CREATE OR REPLACE VIEW `activity_stream` AS
-SELECT ua.id, action_date_add, ua.user_id, u1.name user_name, u1.email user_email, action, action_on, 
-  action_on_id, ac.account_path action_on_name, u2.name action_to_name, u2.id action_to_id, confirmed
-FROM user_actions ua 
-LEFT JOIN users u1 ON (ua.user_id = u1.id)
-JOIN accounts ac ON (ua.action_on_id = ac.id)
-LEFT OUTER JOIN users u2 ON (ua.action_to_id = u2.id)
-WHERE action_on = 'account'
-UNION ALL
-SELECT ua.id, action_date_add, ua.user_id, u1.name user_name, u1.email user_email, action, action_on, 
-  action_on_id, r.river_name action_on_name, u2.name action_to_name, u2.id action_to_id, confirmed
-FROM user_actions ua
-LEFT JOIN users u1 ON (ua.user_id = u1.id)
-JOIN rivers r ON (ua.action_on_id = r.id)
-LEFT OUTER JOIN users u2 ON (ua.action_to_id = u2.id)
-WHERE action_on = 'river'
-UNION ALL
-SELECT ua.id, action_date_add, ua.user_id, u1.name user_name, u1.email user_email, action, action_on, 
-  action_on_id, b.bucket_name action_on_name, u2.name action_to_name, u2.id action_to_id, confirmed
-FROM user_actions ua 
-LEFT JOIN users u1 ON (ua.user_id = u1.id)
-JOIN buckets b ON (ua.action_on_id = b.id)
-LEFT OUTER JOIN users u2 ON (ua.action_to_id = u2.id)
-WHERE action_on = 'bucket';
-
-
--- ----------------------------------------
 -- TABLE 'bucket_subscriptions'
 -- ----------------------------------------
 CREATE TABLE IF NOT EXISTS `bucket_subscriptions` (
@@ -765,15 +738,17 @@ CREATE TABLE IF NOT EXISTS `river_tag_trends` (
 
 
 -- ----------------------------------------
--- TABLE 'comment_scores'
+-- TABLE 'bucket_comment_scores'
 -- ----------------------------------------
-CREATE TABLE IF NOT EXISTS `comment_scores` (
+CREATE TABLE IF NOT EXISTS `bucket_comment_scores` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `comment_id` bigint(20) NOT NULL,
+  `bucket_comment_id` bigint(20) NOT NULL,
   `user_id` bigint(20) NOT NULL,
-  `score` int(11) NOT NULL,
+  `score` tinyint(4) NOT NULL,
+  `score_date_add` timestamp NULL DEFAULT '0000-00-00 00:00:00',
+  `score_date_modified` timestamp NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `comment_id` (`comment_id`,`user_id`)
+  UNIQUE KEY `comment_id` (`bucket_comment_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -849,7 +824,9 @@ INSERT INTO `settings` (`id`, `key`, `value`) VALUES
 (8, 'general_invites_enabled', '0'),
 (9, 'default_river_quota', '1'),
 (10, 'default_river_drop_quota', '10000'),
-(11, 'site_url', 'http://www.example.com');
+(11, 'site_url', 'http://www.example.com'),
+(12, 'email_domain', 'example.com'),
+(12, 'comments_email_domain', 'example.com');
 
 -- -----------------------------------------------------
 -- Data for table `users`

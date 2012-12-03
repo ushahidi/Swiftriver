@@ -176,6 +176,7 @@ class Model_River extends ORM {
 		return array(
 			"id" => $this->id, 
 			"name" => $this->river_name,
+			"type" => 'river',
 			"url" => URL::site().$this->account->account_path.'/river/'.$this->river_name_url,
 			"account_id" => $this->account->id,
 			"user_id" => $this->account->user->id,
@@ -544,6 +545,7 @@ class Model_River extends ORM {
 			$this->river_collaborators
 			    ->where('user_id', '=', $user_orm->id)
 			    ->where('read_only', '!=', 1)
+				->where('collaborator_active', '=', 1)
 			    ->find()
 			    ->loaded()
 		)
@@ -726,6 +728,7 @@ class Model_River extends ORM {
 			$collaborators[] = array(
 				'id' => $collaborator->user->id, 
 				'name' => $collaborator->user->name,
+				'email' => $collaborator->user->email,
 				'account_path' => $collaborator->user->account->account_path,
 				'collaborator_active' => $collaborator->collaborator_active,
 				'read_only' => (bool) $collaborator->read_only,
@@ -1027,7 +1030,30 @@ class Model_River extends ORM {
 
 		return FALSE;
 	}
+	
+	
+	/**
+	 * Return the list of rivers that have the given IDs
+	 *
+	 * @param    Array $ids List of river ids
+	 * @return   Database_Result Model_River array
+	 */
+	
+	public static function get_rivers($ids)
+	{
+		$rivers = array();
+		
+		if ( ! empty($ids))
+		{
+			$query = ORM::factory('River')
+						->where('id', 'IN', $ids);
 
+			// Execute query and return results
+			$rivers = $query->find_all();
+		}
+		
+		return $rivers;
+	}
 }
 
 ?>

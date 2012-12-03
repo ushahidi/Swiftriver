@@ -25,12 +25,6 @@ class Controller_River extends Controller_Drop_Base {
 	 * @var Model_River
 	 */
 	protected $river;
-	
-	/**
-	 * Boolean indicating whether the logged in user owns the river
-	 * @var bool
-	 */
-	protected $owner = FALSE; 
 
 	/**
 	 * Whether the river is newly created
@@ -77,6 +71,7 @@ class Controller_River extends Controller_Drop_Base {
 		{					
 			$this->owner = $this->river->is_owner($this->user->id);
 			$this->collaborator = $this->river->is_collaborator($this->user->id);
+			$this->public = (bool) $this->river->river_public;
 			
 			// If this river is not public and no ownership...
 			if ( ! $this->river->river_public AND 
@@ -118,17 +113,10 @@ class Controller_River extends Controller_Drop_Base {
 			
 			if ( ! $this->owner)
 			{
-				$river_item = json_encode(array(
-					'id' => $this->river->id, 
-					'type' => 'river',
-					'subscribed' => $this->river->is_subscriber($this->user->id)
-				));
-
-				// Action URL - To handle the follow/unfollow actions on the river
-				$action_url = URL::site().$this->visited_account->account_path.'/user/river/manage';
-
-				$this->template->content->river_item = $river_item;
-				$this->template->content->action_url = $action_url;
+				$follow_button = View::factory('template/follow');
+				$follow_button->data = json_encode($this->river->get_array($this->user, $this->user));
+				$follow_button->action_url = URL::site().$this->visited_account->account_path.'/river/rivers/manage';
+				$this->template->content->follow_button = $follow_button;
 			}
 		}
 	}
@@ -401,11 +389,12 @@ class Controller_River extends Controller_Drop_Base {
 									->where('user_id', '=', $user_orm->id)
 									->find();
 				
-				if ( ! $collaborator_orm->loaded())
+				$exists = $collaborator_orm->loaded();
+				if ( ! $exists)
 				{
 					$collaborator_orm->river = $this->river;
 					$collaborator_orm->user = $user_orm;
-					Model_User_Action::create_action($this->user->id, 'river', $this->river->id, $user_orm->id);
+					Model_User_Action::create_action($this->user->id, 'river', 'invite', $this->river->id, $user_orm->id);
 				}
 				
 				if (isset($collaborator_array['read_only']))
@@ -414,6 +403,25 @@ class Controller_River extends Controller_Drop_Base {
 				}
 				
 				$collaborator_orm->save();
+				
+				if ( ! $exists)
+				{
+					// Send email notification after successful save
+					$html = View::factory('emails/html/collaboration_invite');
+					$text = View::factory('emails/text/collaboration_invite');
+					$html->invitor = $text->invitor = $this->user->name;
+					$html->asset_name = $text->asset_name = $this->river->river_name;
+					$html->asset = $text->asset = 'river';
+					$html->link = $text->link = URL::site($collaborator_orm->user->account->account_path, TRUE);
+					$html->avatar = Swiftriver_Users::gravatar($this->user->email, 80);
+					$html->invitor_link = URL::site($this->user->account->account_path, TRUE);
+					$html->asset_link = URL::site($this->river_base_url, TRUE);
+					$subject = __(':invitor has invited you to collaborate on a river',
+									array( ":invitor" => $this->user->name,
+									));
+					SwiftRiver_Mail::send($collaborator_orm->user->email, 
+										  $subject, $text->render(), $html->render());
+				}
 			break;
 		}
 	}
@@ -471,6 +479,7 @@ class Controller_River extends Controller_Drop_Base {
 					if ( ! $this->user->has('river_subscriptions', $river_orm))
 					{
 						$this->user->add('river_subscriptions', $river_orm);
+						Model_User_Action::create_action($this->user->id, 'river', 'follow', $river_orm->id);
 					}
 
 					Cache::instance()->delete('user_rivers_'.$this->user->id);
